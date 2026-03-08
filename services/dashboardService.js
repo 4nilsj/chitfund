@@ -43,57 +43,51 @@ async function getDashboardData(user, fundName, query = {}) {
     const openingSetting = await db.get("SELECT value FROM settings WHERE key = 'opening_balance'");
     const isOpeningBalanceSet = !!openingSetting;
 
-    // Total Interest Earned
-    const allLoans = await db.all("SELECT id, amount, interest_rate, tenure, interest_waived FROM loans");
+    // ── Aggregated Interest & Outstanding Calculations (O(1) queries, no more N+1) ──
+    //
+    // Single query: joins each loan with the SUM of its repayments,
+    // then computes interest earned and collected entirely in JS with math.
+    const loanAggregates = await db.all(`
+        SELECT
+            l.id,
+            l.amount,
+            l.interest_rate,
+            l.tenure,
+            l.interest_waived,
+            l.status,
+            l.member_id,
+            COALESCE(SUM(CASE WHEN t.type = 'repayment' THEN t.amount ELSE 0 END), 0) AS total_repaid
+        FROM loans l
+        LEFT JOIN transactions t ON t.loan_id = l.id
+        ${isMember ? 'WHERE l.member_id = ?' : ''}
+        GROUP BY l.id
+    `, isMember ? [memberId] : []);
+
     let totalInterestEarned = 0;
     let totalInterestCollected = 0;
+    let calculatedTotalOutstanding = 0;
+    let calculatedPrincipalPending = 0;
 
-    for (const loan of allLoans) {
-        const repayments = await db.get("SELECT SUM(amount) as total FROM transactions WHERE loan_id = ? AND type = 'repayment'", [loan.id]);
-        const totalRepaid = repayments.total || 0;
-
+    for (const loan of loanAggregates) {
         const rawTotalInterest = (loan.amount * loan.interest_rate * loan.tenure) / 100;
         const totalInterest = Math.max(0, rawTotalInterest - (loan.interest_waived || 0));
         const totalPayable = loan.amount + totalInterest;
+        const totalRepaid = loan.total_repaid;
 
         const interestRatio = totalPayable > 0 ? (totalInterest / totalPayable) : 0;
         const interestCollected = totalRepaid * interestRatio;
 
         totalInterestEarned += totalInterest;
         totalInterestCollected += interestCollected;
-    }
 
-    // Total Outstanding
-    const activeLoansQuery = isMember
-        ? "SELECT * FROM loans WHERE status = 'active' AND member_id = ?"
-        : "SELECT * FROM loans WHERE status = 'active'";
+        // Only count active loans for outstanding/principal figures
+        if (loan.status === 'active') {
+            const outstanding = Math.max(0, totalPayable - totalRepaid);
+            calculatedTotalOutstanding += outstanding;
 
-    const activeLoansForMob = isMember
-        ? await db.all(activeLoansQuery, [memberId])
-        : await db.all(activeLoansQuery);
-
-    let calculatedTotalOutstanding = 0;
-    let calculatedPrincipalPending = 0;
-
-    for (const loan of activeLoansForMob) {
-        const rawTotalInterest = (loan.amount * loan.interest_rate * loan.tenure) / 100;
-        const totalInterest = Math.max(0, rawTotalInterest - (loan.interest_waived || 0));
-        const totalPayable = loan.amount + totalInterest;
-
-        const repayments = await db.get(
-            "SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE loan_id = ? AND type = 'repayment'",
-            [loan.id]
-        );
-        const totalRepaidVal = repayments.total || 0;
-
-        const outstanding = Math.max(0, totalPayable - totalRepaidVal);
-        calculatedTotalOutstanding += outstanding;
-
-        const interestRatio = totalPayable > 0 ? (totalInterest / totalPayable) : 0;
-        const principalRepaid = totalRepaidVal * (1 - interestRatio);
-        const principalPending = Math.max(0, loan.amount - principalRepaid);
-
-        calculatedPrincipalPending += principalPending;
+            const principalRepaid = totalRepaid * (1 - interestRatio);
+            calculatedPrincipalPending += Math.max(0, loan.amount - principalRepaid);
+        }
     }
 
     // Recent Transactions
@@ -114,26 +108,40 @@ async function getDashboardData(user, fundName, query = {}) {
             LIMIT 5
         `);
 
-    // ANALYTICS DATA
+    // ── Aggregated Monthly Trends (single query instead of 12) ──
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    const sixMonthsAgoStr = sixMonthsAgo.toISOString().slice(0, 7);
+
+    const trendRows = await db.all(`
+        SELECT
+            strftime('%Y-%m', date) AS month_key,
+            SUM(CASE WHEN type IN ('contribution', 'repayment', 'penalty') THEN amount ELSE 0 END) AS collections,
+            SUM(CASE WHEN type = 'disbursement' THEN amount ELSE 0 END) AS disbursements
+        FROM transactions
+        WHERE date >= ?
+        ${isMember ? 'AND member_id = ?' : ''}
+        GROUP BY month_key
+        ORDER BY month_key ASC
+    `, isMember ? [sixMonthsAgoStr + '-01', memberId] : [sixMonthsAgoStr + '-01']);
+
+    // Build a complete 6-month array filling in 0s for months with no data
+    const trendMap = {};
+    for (const row of trendRows) {
+        trendMap[row.month_key] = row;
+    }
+
     const monthlyTrends = [];
     for (let i = 5; i >= 0; i--) {
         const date = new Date();
         date.setMonth(date.getMonth() - i);
         const monthStr = date.toISOString().slice(0, 7);
         const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-
-        const monthCollections = isMember
-            ? await db.get("SELECT SUM(amount) as total FROM transactions WHERE type IN ('contribution', 'repayment', 'penalty') AND date LIKE ? AND member_id = ?", [`${monthStr}%`, memberId])
-            : await db.get("SELECT SUM(amount) as total FROM transactions WHERE type IN ('contribution', 'repayment', 'penalty') AND date LIKE ?", [`${monthStr}%`]);
-
-        const monthDisbursements = isMember
-            ? await db.get("SELECT SUM(amount) as total FROM transactions WHERE type = 'disbursement' AND date LIKE ? AND member_id = ?", [`${monthStr}%`, memberId])
-            : await db.get("SELECT SUM(amount) as total FROM transactions WHERE type = 'disbursement' AND date LIKE ?", [`${monthStr}%`]);
-
+        const row = trendMap[monthStr] || {};
         monthlyTrends.push({
             month: monthName,
-            collections: monthCollections.total || 0,
-            disbursements: monthDisbursements.total || 0
+            collections: row.collections || 0,
+            disbursements: row.disbursements || 0
         });
     }
 

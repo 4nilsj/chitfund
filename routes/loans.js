@@ -23,6 +23,10 @@ router.get('/', async (req, res) => {
         const memberId = req.session.user.memberId;
         const isMember = userType === 'member';
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = 15;
+        const offset = (page - 1) * limit;
+
         const sortBy = req.query.sortBy || 'id';
         const sortDir = req.query.sortDir === 'asc' ? 'ASC' : 'DESC';
         const search = req.query.search || '';
@@ -62,13 +66,19 @@ router.get('/', async (req, res) => {
         const sortColumn = allowedSortColumns[sortBy] || 'l.id';
         const secondarySort = sortColumn === 'l.id' ? '' : ', l.id DESC';
 
+        // COUNT total matching loans (for pagination)
+        const countResult = await db.get(`SELECT COUNT(*) as total ${baseQuery}`, params);
+        const totalItems = countResult.total;
+        const totalPages = Math.ceil(totalItems / limit);
+
         const loansQuery = `
             SELECT l.*, m.name as borrower_name, m.type as borrower_type 
             ${baseQuery}
             ORDER BY ${sortColumn === 'l.id' ? `l.status = 'active' DESC, ` : ''}${sortColumn} ${sortDir} ${secondarySort}
+            LIMIT ? OFFSET ?
         `;
 
-        const loans = await db.all(loansQuery, params);
+        const loans = await db.all(loansQuery, [...params, limit, offset]);
 
         // Enhance loans with comprehensive payment tracking and EMI details
         const loansWithPaymentInfo = await Promise.all(loans.map(async (loan) => {
@@ -164,14 +174,29 @@ router.get('/', async (req, res) => {
         const members = isMember
             ? []
             : await db.all("SELECT id, name, type FROM members WHERE status = 'active' ORDER BY name ASC");
-        console.log('Active members found:', members.length);
 
-        // Calculate Summary Stats
+        // Calculate Summary Stats across ALL matching loans (not just current page)
+        const statsRow = await db.get(`
+            SELECT
+                COUNT(CASE WHEN l.status = 'active' THEN 1 END) AS activeCount,
+                COALESCE(SUM(l.outstanding), 0) AS totalOutstanding,
+                COALESCE(SUM(l.amount), 0) AS totalDisbursed
+            FROM loans l
+            JOIN members m ON l.member_id = m.id
+            WHERE 1=1
+            ${isMember ? 'AND l.member_id = ?' : ''}
+            ${search ? 'AND m.name LIKE ?' : ''}
+            ${statusFilter !== 'all' ? 'AND l.status = ?' : ''}
+        `, params);
+
+        // Total interest earned is a heavier calculation — do it from current page only for display purposes
+        const totalInterestOnPage = loansWithPaymentInfo.reduce((sum, l) => sum + (l.totalInterest || 0), 0);
+
         const stats = {
-            activeCount: loansWithPaymentInfo.filter(l => l.status === 'active').length,
-            totalOutstanding: loansWithPaymentInfo.reduce((sum, l) => sum + (l.outstanding || 0), 0),
-            totalDisbursed: loansWithPaymentInfo.reduce((sum, l) => sum + l.amount, 0),
-            totalInterest: loansWithPaymentInfo.reduce((sum, l) => sum + (l.totalInterest || 0), 0)
+            activeCount: statsRow.activeCount || 0,
+            totalOutstanding: statsRow.totalOutstanding || 0,
+            totalDisbursed: statsRow.totalDisbursed || 0,
+            totalInterest: totalInterestOnPage
         };
 
         if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
@@ -182,7 +207,13 @@ router.get('/', async (req, res) => {
                 search,
                 statusFilter,
                 sortBy,
-                sortDir
+                sortDir,
+                totalItems,
+                pagination: {
+                    baseUrl: '/loans',
+                    currentPage: page,
+                    totalPages
+                }
             });
         }
 
@@ -190,10 +221,18 @@ router.get('/', async (req, res) => {
             user: req.session.user,
             activePage: 'loans',
             loans: loansWithPaymentInfo,
-            totalItems: loansWithPaymentInfo.length,
+            totalItems,
+            currentPage: page,
+            totalPages,
+            pagination: {
+                baseUrl: '/loans',
+                currentPage: page,
+                totalPages
+            },
             stats,
             members,
             search,
+            statusFilter,
             sortBy,
             sortDir,
             formatCurrency,
