@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Status Dashboard | <%= fundName %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body class="bg-slate-50/50 dark:bg-slate-900 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <main class="main-content md:ml-64 relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-8 py-6 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center gap-6">
+                        <a href="/"
+                            class="w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-primary dark:hover:text-primary-light hover:border-primary transition-all shadow-sm">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                Payment Activity Matrix
+                            </h1>
+                            <p
+                                class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-1 italic">
+                                Real-time installment tracking across fund members</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+                    <!-- Summary Stats -->
+                    <% let totalPaid=0; let totalPending=0; members.forEach(m=> {
+                        m.payments.forEach(p => {
+                        if (p.paid) totalPaid++;
+                        else totalPending++;
+                        });
+                        }); %>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div
+                                class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 flex items-center gap-5 group">
+                                <div
+                                    class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-check-double"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                        Received
+                                    </h3>
+                                    <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                                        <%= totalPaid %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 flex items-center gap-5 group">
+                                <div
+                                    class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                        Awaiting
+                                    </h3>
+                                    <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                                        <%= totalPending %>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 flex items-center gap-5 group">
+                                <div
+                                    class="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <h3
+                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                        Total
+                                        Stakeholders</h3>
+                                    <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">
+                                        <%= members.length %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Grid Card -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div
+                                class="px-10 py-8 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/80">
+                                <div>
+                                    <h2 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Monthly
+                                        Compliance
+                                        Tracker</h2>
+                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">Snapshot of
+                                        the last 6 payment
+                                        cycles</p>
+                                </div>
+                                <div
+                                    class="flex items-center gap-4 bg-white dark:bg-slate-900 px-5 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Paid</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="w-3 h-3 rounded-full border-2 border-dashed border-rose-500 bg-rose-50 dark:bg-rose-900/30"></span>
+                                        <span
+                                            class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Due</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50/50 dark:bg-slate-900/50">
+                                            <th
+                                                class="px-10 py-6 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] border-b border-slate-100 dark:border-slate-700">
+                                                Member Identity</th>
+                                            <% months.forEach(function(month) { %>
+                                                <th
+                                                    class="px-4 py-6 text-center border-b border-slate-100 dark:border-slate-700 <%= month.isCurrent ? 'bg-primary/5 dark:bg-primary/10' : '' %>">
+                                                    <div
+                                                        class="text-[11px] font-black <%= month.isCurrent ? 'text-primary dark:text-primary-light' : 'text-slate-400 dark:text-slate-500' %> uppercase tracking-[0.2em]">
+                                                        <%= month.label %>
+                                                    </div>
+                                                    <% if (month.isCurrent) { %>
+                                                        <span
+                                                            class="text-[8px] font-black text-white bg-primary px-2 py-0.5 rounded-full uppercase tracking-tighter">Current</span>
+                                                        <% } %>
+                                                </th>
+                                                <% }); %>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50 dark:divide-slate-700/50">
+                                        <% members.forEach(function(memberData) { %>
+                                            <tr
+                                                class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                                                <td class="px-10 py-6">
+                                                    <div class="flex items-center gap-4">
+                                                        <div
+                                                            class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-300 font-bold group-hover:bg-primary group-hover:text-white transition-all">
+                                                            <%= memberData.member.name.charAt(0).toUpperCase() %>
+                                                        </div>
+                                                        <div>
+                                                            <div
+                                                                class="text-sm font-black text-slate-900 dark:text-slate-200">
+                                                                <%= memberData.member.name %>
+                                                            </div>
+                                                            <div
+                                                                class="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                                <%= memberData.member.type %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <% memberData.payments.forEach(function(payment) { %>
+                                                    <td class="px-4 py-6 text-center">
+                                                        <div class="relative inline-block group/cell">
+                                                            <% if (payment.paid) { %>
+                                                                <div
+                                                                    class="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-200/50 hover:scale-110 transition-transform">
+                                                                    <i class="fas fa-check text-sm"></i>
+                                                                </div>
+                                                                <div
+                                                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 dark:bg-slate-700 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover/cell:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-black uppercase tracking-widest z-20">
+                                                                    <%= formatCurrency(payment.amount) %>
+                                                                </div>
+                                                                <% } else { %>
+                                                                    <div
+                                                                        class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border-2 border-dashed border-rose-200 dark:border-rose-800 text-rose-300 dark:text-rose-500 flex items-center justify-center hover:border-rose-400 hover:text-rose-500 hover:bg-rose-100/50 dark:hover:bg-rose-900/40 hover:scale-110 transition-all">
+                                                                        <i class="fas fa-times text-sm"></i>
+                                                                    </div>
+                                                                    <div
+                                                                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 dark:bg-slate-700 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover/cell:opacity-100 pointer-events-none transition-opacity whitespace-nowrap font-black uppercase tracking-widest z-20">
+                                                                        Awaiting Payment
+                                                                    </div>
+                                                                    <% } %>
+                                                        </div>
+                                                    </td>
+                                                    <% }); %>
+                                            </tr>
+                                            <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div
+                                class="bg-slate-50/80 dark:bg-slate-900/50 px-10 py-6 border-t border-slate-100 dark:border-slate-700 flex items-center gap-6 justify-center">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-info-circle text-primary text-sm"></i>
+                                    <p
+                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                        Audit
+                                        logs are based on posted transactions only. Manual verification recommended for
+                                        pending states.</p>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+            </main>
+    </div>
+</body>
+
+</html>

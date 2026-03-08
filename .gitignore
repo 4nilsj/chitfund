@@ -1,0 +1,9 @@
+node_modules/
+.env
+chitfund*.db
+chitfund_test.db
+uploads/
+backups/
+server*.log
+coverage/
+.DS_Store

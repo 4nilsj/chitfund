@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt #<%= txn.id %> | <%= fundName %>
+    </title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body class="bg-slate-50/50 print:bg-white min-h-screen">
+    <!-- Back Button (Hidden on Print) -->
+    <div class="p-8 print:hidden">
+        <a href="/transactions"
+            class="inline-flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-black text-[10px] uppercase tracking-widest">
+            <i class="fas fa-arrow-left text-xs"></i> Transaction Ledger
+        </a>
+    </div>
+
+    <!-- Receipt Container -->
+    <div class="max-w-xl mx-auto p-4 md:p-12">
+        <div
+            class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden transform transition-all hover:shadow-3xl">
+            <!-- Receipt Header -->
+            <div
+                class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-10 py-12 text-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10">
+                    <div
+                        class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-primary/40">
+                    </div>
+                </div>
+                <div class="relative z-10">
+                    <div
+                        class="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/20">
+                        <i class="fas fa-receipt text-primary text-2xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-black text-white tracking-tight mb-1">
+                        <%= fundName %>
+                    </h1>
+                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">Official Digital Receipt
+                    </p>
+                </div>
+            </div>
+
+            <!-- Transaction Body -->
+            <div class="p-10 space-y-10">
+                <!-- ID & Date -->
+                <div class="flex justify-between items-start">
+                    <div>
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Receipt
+                            Number</span>
+                        <div class="text-sm font-black text-slate-900">#<%= txn.id %>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Date
+                            Issued</span>
+                        <div class="text-sm font-black text-slate-900">
+                            <%= new Date(txn.date).toLocaleDateString(undefined, { year: 'numeric' , month: 'long' ,
+                                day: 'numeric' }) %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Member -->
+                <div class="bg-slate-50/50 rounded-2xl p-6 border border-slate-100">
+                    <span
+                        class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Counterparty</span>
+                    <div class="text-lg font-black text-slate-900">
+                        <%= txn.member_name || 'System General' %>
+                    </div>
+                    <div class="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1 italic">Verified
+                        Fund Member</div>
+                </div>
+
+                <!-- Amount Breakdown -->
+                <div class="text-center py-6 border-y-2 border-dashed border-slate-100">
+                    <span
+                        class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-2">Transaction
+                        Total</span>
+                    <div class="text-5xl font-black text-primary tracking-tighter mb-2">
+                        <%= formatCurrency(txn.amount) %>
+                    </div>
+                    <div
+                        class="inline-flex items-center px-4 py-1.5 rounded-full bg-slate-900 text-[9px] font-black text-white uppercase tracking-widest shadow-lg shadow-slate-200">
+                        <i class="fas fa-shield-alt text-[8px] mr-2 text-primary"></i>
+                        <%= txn.type %>
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="space-y-2">
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Reference
+                        Notes</span>
+                    <p
+                        class="text-sm font-medium text-slate-600 leading-relaxed italic block pl-4 border-l-2 border-primary/20">
+                        <%= txn.remarks || 'No additional remarks provided for this transaction.' %>
+                    </p>
+                </div>
+
+                <!-- Footer / Actions -->
+                <div class="pt-8 flex flex-col items-center gap-4 print:hidden">
+                    <div class="flex gap-4 w-full">
+                        <button onclick="window.print()"
+                            class="flex-1 bg-white border border-slate-200 h-14 rounded-2xl flex items-center justify-center gap-3 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                        <a href="/transactions/<%= txn.id %>/receipt"
+                            class="flex-1 bg-rose-500 text-white h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-widest hover:bg-rose-600 transition-all active:scale-95 shadow-xl shadow-rose-200">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+                    </div>
+                    <p class="text-[8px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                        This is a computer generated document. No signature required.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Receipt Bottom Pattern -->
+            <div class="h-2 bg-gradient-to-r from-primary via-slate-900 to-primary"></div>
+        </div>
+
+        <!-- Print Footer (Only on Print) -->
+        <div
+            class="hidden print:block mt-12 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest border-t border-slate-100 pt-8">
+            Generated via <%= fundName %> Financial Management System
+        </div>
+    </div>
+</body>
+
+</html>

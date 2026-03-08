@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Loans - Chit Fund</title>
+</head>
+
+<body
+    class="bg-background dark:bg-slate-900 font-sans antialiased text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="main-content relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden md:ml-64">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+                    <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Active Loans</h1>
+
+                    <div class="flex items-center gap-3">
+                        <% if (locals.user && locals.user.role !=='member' ) { %>
+                            <button onclick="document.getElementById('loan-modal').classList.remove('hidden')"
+                                class="btn-primary flex items-center gap-2">
+                                <i class="fas fa-plus"></i> New Loan
+                            </button>
+                            <% } %>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-3 mb-1">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                </div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Loans
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-800 dark:text-white">
+                                <%= stats.activeCount %>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-3 mb-1">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-danger/10 flex items-center justify-center text-danger">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Outstanding
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-800 dark:text-white">
+                                <%= formatCurrency(stats.totalOutstanding) %>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-3 mb-1">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center text-success">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Disbursed
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-800 dark:text-white">
+                                <%= formatCurrency(stats.totalDisbursed) %>
+                            </div>
+                        </div>
+
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                            <div class="flex items-center gap-3 mb-1">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center text-warning-dark">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Interest
+                                </div>
+                            </div>
+                            <div class="text-2xl font-bold text-slate-800 dark:text-white">
+                                <%= formatCurrency(stats.totalInterest) %>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Search and Filters -->
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+                        <form method="GET" action="/loans" class="flex flex-col md:flex-row gap-4 items-end">
+
+                            <div class="flex-1 w-full">
+                                <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                    <i class="fas fa-search text-slate-400 mr-1.5"></i> Search Borrower
+                                </label>
+                                <input type="text" name="search"
+                                    value="<%= typeof search !== 'undefined' ? search : '' %>"
+                                    placeholder="Search by borrower name..."
+                                    class="form-input w-full dark:bg-slate-900/50 dark:border-slate-700 dark:text-white dark:placeholder-slate-500">
+                            </div>
+
+                            <div class="w-full md:w-48">
+                                <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                    <i class="fas fa-filter text-slate-400 mr-1.5"></i> Status
+                                </label>
+                                <select name="status"
+                                    class="form-select w-full dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                                    <option value="all" <%=typeof statusFilter !=='undefined' && statusFilter==='all'
+                                        ? 'selected' : '' %>>All</option>
+                                    <option value="active" <%=typeof statusFilter !=='undefined' &&
+                                        statusFilter==='active' ? 'selected' : '' %>>Active
+                                    </option>
+                                    <option value="closed" <%=typeof statusFilter !=='undefined' &&
+                                        statusFilter==='closed' ? 'selected' : '' %>>Closed
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button type="submit" class="btn-primary flex-1 md:flex-none justify-center">
+                                    <i class="fas fa-search mr-2"></i> Search
+                                </button>
+                                <a href="/loans" class="btn-secondary flex-1 md:flex-none justify-center">
+                                    <i class="fas fa-redo mr-2"></i> Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div
+                            class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                            <span>
+                                <i class="fas fa-list mr-1.5"></i>
+                                Showing <%= totalItems %>
+                                    <%= totalItems===1 ? 'loan' : 'loans' %>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Messages -->
+                    <% if(locals.error==='duplicate_payment' ) { %>
+                        <div
+                            class="bg-danger/10 text-danger border border-danger/20 rounded-lg p-4 flex items-center gap-3">
+                            <i class="fas fa-hand-paper text-xl"></i>
+                            <div><span class="font-bold">Payment Failed:</span> EMI for this month has already been
+                                paid!</div>
+                        </div>
+                        <% } %>
+
+                            <% if(locals.error==='invalid_member' ) { %>
+                                <div
+                                    class="bg-danger/10 text-danger border border-danger/20 rounded-lg p-4 flex items-center gap-3">
+                                    <i class="fas fa-exclamation-circle text-xl"></i>
+                                    <div><span class="font-bold">Invalid Member:</span> Selected member does not exist.
+                                    </div>
+                                </div>
+                                <% } %>
+
+                                    <% if(locals.error==='inactive_member' ) { %>
+                                        <div
+                                            class="bg-danger/10 text-danger border border-danger/20 rounded-lg p-4 flex items-center gap-3">
+                                            <i class="fas fa-user-slash text-xl"></i>
+                                            <div><span class="font-bold">Inactive Member:</span> Cannot create loan for
+                                                inactive member.</div>
+                                        </div>
+                                        <% } %>
+
+                                            <% if(locals.error==='invalid_amount' ) { %>
+                                                <div
+                                                    class="bg-danger/10 text-danger border border-danger/20 rounded-lg p-4 flex items-center gap-3">
+                                                    <i class="fas fa-rupee-sign text-xl"></i>
+                                                    <div><span class="font-bold">Invalid Amount:</span> Loan amount must
+                                                        be between ₹1,000 and ₹10,00,000.</div>
+                                                </div>
+                                                <% } %>
+
+                                                    <% if(locals.error==='max_loans' ) { %>
+                                                        <div
+                                                            class="bg-warning/10 text-warning-dark border border-warning/20 rounded-lg p-4 flex items-center gap-3">
+                                                            <i class="fas fa-exclamation-triangle text-xl"></i>
+                                                            <div><span class="font-bold">Loan Limit Reached:</span>
+                                                                Member already has 3 active loans (maximum allowed).
+                                                            </div>
+                                                        </div>
+                                                        <% } %>
+
+                                                            <% if(locals.error==='outstanding_limit' ) { %>
+                                                                <div
+                                                                    class="bg-warning/10 text-warning-dark border border-warning/20 rounded-lg p-4 flex items-center gap-3">
+                                                                    <i class="fas fa-exclamation-triangle text-xl"></i>
+                                                                    <div><span class="font-bold">Outstanding Limit
+                                                                            Exceeded:</span> Total outstanding would
+                                                                        exceed ₹5,00,000 limit.</div>
+                                                                </div>
+                                                                <% } %>
+
+                                                                    <% if(locals.error &&
+                                                                        !["duplicate_payment", "invalid_member"
+                                                                        , "inactive_member" , "invalid_amount"
+                                                                        , "max_loans" , "outstanding_limit"
+                                                                        ].includes(locals.error)) { %>
+                                                                        <div
+                                                                            class="bg-danger/10 text-danger border border-danger/20 rounded-lg p-4 flex items-center gap-3">
+                                                                            <i
+                                                                                class="fas fa-exclamation-circle text-xl"></i>
+                                                                            <div><span class="font-bold">Error:</span>
+                                                                                <%= locals.error %>
+                                                                            </div>
+                                                                        </div>
+                                                                        <% } %>
+
+                                                                            <!-- Loans Table -->
+                                                                            <div id="data-table-container"
+                                                                                class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+                                                                                <div class="table-wrapper">
+                                                                                    <%- include('partials/loan_table')
+                                                                                        %>
+                                                                                </div>
+                                                                            </div>
+                </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- Create Loan Modal -->
+    <div id="loan-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden transform transition-all h-full md:h-auto max-h-[90vh] flex flex-col border border-slate-200 dark:border-slate-700">
+            <div
+                class="bg-gradient-to-r from-primary to-primary-dark px-8 py-6 flex justify-between items-center shrink-0 text-white">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-3">
+                        <i class="fas fa-plus-circle"></i> Create New Loan
+                    </h3>
+                    <p class="text-primary-100/80 text-xs mt-1">Disburse internal funds to a registered member</p>
+                </div>
+                <button onclick="document.getElementById('loan-modal').classList.add('hidden')"
+                    class="text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-8 custom-scrollbar">
+                <form action="/loans/add" method="POST" class="space-y-8">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="col-span-1 md:col-span-2 space-y-3">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Borrower
+                                Information</label>
+                            <div class="relative group">
+                                <i
+                                    class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                                <input type="text" id="member-search" placeholder="Search member name..."
+                                    class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-medium"
+                                    oninput="filterMembers()">
+                            </div>
+                            <div class="relative group">
+                                <i
+                                    class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                                <select name="member_id" id="member-select" required
+                                    class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium appearance-none">
+                                    <option value="">-- Select Member --</option>
+                                    <% if(locals.members) { %>
+                                        <% members.forEach(m=> { %>
+                                            <option value="<%= m.id %>">
+                                                <%= m.name %> (<%= m.type %>)
+                                            </option>
+                                            <% }); %>
+                                                <% } %>
+                                </select>
+                                <i
+                                    class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                                Disbursal Date
+                            </label>
+                            <div class="relative group">
+                                <i
+                                    class="fas fa-calendar-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                                <input type="date" name="start_date" required
+                                    max="<%= new Date().toISOString().split('T')[0] %>"
+                                    min="<%= new Date(Date.now() - 365*24*60*60*1000).toISOString().split('T')[0] %>"
+                                    value="<%= new Date().toISOString().split('T')[0] %>"
+                                    class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">
+                                Tenure (Months)
+                            </label>
+                            <div class="relative group">
+                                <i
+                                    class="fas fa-hourglass-half absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                                <input type="number" name="tenure" id="loan-tenure" required min="1" max="60" step="1"
+                                    value="12"
+                                    class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="p-6 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-6">
+                        <h4
+                            class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-primary/40"></span> Financial Configuration
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-700 ml-1">Principal Amount (₹)</label>
+                                <div class="relative group shadow-sm bg-white dark:bg-slate-900/50 rounded-xl">
+                                    <span
+                                        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold group-focus-within:text-primary">₹</span>
+                                    <input type="number" name="amount" id="loan-amount" required min="1000"
+                                        max="1000000" step="100" placeholder="50000"
+                                        class="w-full pl-10 pr-4 py-4 bg-transparent border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono text-xl font-bold text-slate-800">
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-700 ml-1">Int. Rate (% / Mo)</label>
+                                <div class="relative group shadow-sm bg-white dark:bg-slate-900/50 rounded-xl">
+                                    <i
+                                        class="fas fa-percentage absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary"></i>
+                                    <input type="number" name="rate" id="loan-rate" required min="0.1" max="10"
+                                        step="0.1" value="2"
+                                        class="w-full pl-10 pr-4 py-4 bg-transparent border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono text-xl font-bold text-slate-800">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="button"
+                                class="text-[10px] font-bold text-primary hover:text-primary-dark uppercase tracking-widest flex items-center gap-1.5 transition-all outline-none"
+                                onclick="document.getElementById('advanced-opts').classList.toggle('hidden')">
+                                <i class="fas fa-sliders-h"></i> Custom Interest Overrides <i
+                                    class="fas fa-chevron-down text-[8px]"></i>
+                            </button>
+                            <div id="advanced-opts" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 hidden">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Fixed Monthly Int
+                                        (₹)</label>
+                                    <input type="number" name="custom_interest" id="custom-interest" step="0.01"
+                                        placeholder="0.00"
+                                        class="w-full px-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg text-sm font-medium focus:border-primary outline-none transition-all shadow-sm">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase ml-1">Fixed EMI
+                                        (₹)</label>
+                                    <input type="number" name="manual_emi" id="manual-emi" step="0.01"
+                                        placeholder="0.00"
+                                        class="w-full px-4 py-2.5 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-lg text-sm font-medium focus:border-primary outline-none transition-all shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Area -->
+                    <div
+                        class="bg-slate-900 dark:bg-slate-950 rounded-2xl p-6 shadow-xl shadow-slate-200 dark:shadow-none">
+                        <div class="grid grid-cols-2 gap-6 divide-l divide-slate-800">
+                            <div class="text-center md:text-left">
+                                <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">
+                                    Projected EMI</div>
+                                <div id="emi-display" class="text-3xl font-bold text-white tracking-tight">₹0</div>
+                            </div>
+                            <div class="text-center md:text-left border-l border-slate-800 pl-6">
+                                <div class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Total
+                                    Payback</div>
+                                <div id="total-display" class="text-2xl font-bold text-primary tracking-tight">₹0</div>
+                                <p class="text-[10px] text-slate-600 mt-1 uppercase font-bold tracking-widest">Principal
+                                    + Total Int</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row justify-end gap-3 pt-4 border-t border-slate-100">
+                        <button type="button"
+                            class="btn-secondary px-8 py-3.5 font-bold uppercase tracking-widest text-xs"
+                            onclick="document.getElementById('loan-modal').classList.add('hidden')">Discard</button>
+                        <button type="submit"
+                            class="btn-primary bg-primary border-none text-white px-10 py-3.5 font-bold uppercase tracking-widest text-xs shadow-lg shadow-primary/30">
+                            Confirm & Disburse
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repay Modal -->
+    <div id="repay-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-200">
+            <div
+                class="bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-6 flex justify-between items-center text-white">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-money-bill-wave"></i> Record Payment
+                    </h3>
+                    <p class="text-emerald-100/80 text-xs mt-1">Accept EMI or settlement payments</p>
+                </div>
+                <button onclick="document.getElementById('repay-modal').classList.add('hidden')"
+                    class="text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form action="/loans/repay" method="POST" enctype="multipart/form-data" class="p-8 space-y-6">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="loan_id" id="repay-loan-id">
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Date</label>
+                        <input type="date" name="date" required value="<%= new Date().toISOString().split('T')[0] %>"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-sm">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">For Month</label>
+                        <div class="relative group">
+                            <select name="month_for" required
+                                class="w-full pl-4 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-medium text-sm appearance-none">
+                                <% const months=["Jan", "Feb" , "Mar" , "Apr" , "May" , "Jun" , "Jul" , "Aug" , "Sep"
+                                    , "Oct" , "Nov" , "Dec" ]; const curMonth=new Date().getMonth(); const curYear=new
+                                    Date().getFullYear(); months.forEach((m, i)=> {
+                                    const val = `${m} ${curYear}`;
+                                    const selected = i === curMonth ? 'selected' : '';
+                                    %>
+                                    <option value="<%= val %>" <%=selected %>><%= val %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-[10px]"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex justify-between items-center shadow-inner">
+                    <div class="space-y-1">
+                        <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Total Outstanding
+                        </p>
+                        <strong id="repay-outstanding-display"
+                            class="text-2xl font-bold text-emerald-900 tracking-tight">₹0</strong>
+                    </div>
+                    <div
+                        class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-emerald-500 shadow-sm">
+                        <i class="fas fa-receipt text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center px-1">
+                        <label class="text-xs font-bold text-slate-700 uppercase tracking-wider">Payment Amount
+                            (₹)</label>
+                        <button type="button" onclick="setFullSettlement()"
+                            class="text-[10px] font-black text-primary hover:text-primary-dark uppercase tracking-widest outline-none">
+                            Full Settlement
+                        </button>
+                    </div>
+                    <div class="relative group">
+                        <span
+                            class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold group-focus-within:text-emerald-600 transition-colors">₹</span>
+                        <input type="number" name="amount" id="repay-amount" required min="1" step="0.01"
+                            class="w-full pl-10 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-mono text-2xl font-bold text-slate-800">
+                    </div>
+                    <p id="repay-max-warning" class="hidden text-[10px] text-danger mt-2 font-bold px-1 animate-pulse">
+                        <i class="fas fa-exclamation-circle mr-1"></i> Amount cannot exceed outstanding balance.
+                    </p>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Payment Receipt
+                        (Optional)</label>
+                    <div class="relative group">
+                        <input type="file" name="receipt" accept=".pdf, .png, .jpg, .jpeg, image/*" class="block w-full text-sm text-slate-500 font-medium
+                                file:mr-4 file:py-2.5 file:px-6
+                                file:rounded-xl file:border-0
+                                file:text-[10px] file:font-black file:uppercase file:tracking-widest
+                                file:bg-primary/10 file:text-primary
+                                hover:file:bg-primary/20 file:transition-all
+                                bg-slate-50 border border-slate-200 rounded-2xl p-2.5">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 pt-4 border-t border-slate-100">
+                    <button type="submit"
+                        class="btn-primary w-full py-4 bg-emerald-600 hover:bg-emerald-700 border-none font-bold uppercase tracking-[0.2em] shadow-lg shadow-emerald-200">
+                        <i class="fas fa-check-circle mr-2"></i> Receive Payment
+                    </button>
+                    <button type="button"
+                        class="btn-secondary w-full py-3.5 font-bold uppercase tracking-widest text-slate-400 text-xs"
+                        onclick="document.getElementById('repay-modal').classList.add('hidden')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="delete-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-slate-200">
+            <div class="p-8">
+                <div
+                    class="flex items-center justify-center w-16 h-16 mx-auto bg-rose-100 rounded-full mb-6 text-rose-600">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Cancel Loan Record</h3>
+                <p class="text-slate-500 text-center mb-8 text-sm leading-relaxed">
+                    Are you sure you want to delete this loan? This action <span
+                        class="text-rose-600 font-bold underline decoration-2">cannot be undone</span> and will remove
+                    all associated repayment records from the system.
+                </p>
+
+                <form id="delete-form" method="POST" class="flex flex-col gap-3">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit"
+                        class="btn-primary bg-rose-600 hover:bg-rose-700 border-none w-full py-4 font-bold uppercase tracking-[0.2em] shadow-lg shadow-rose-100 order-2">
+                        Delete Permanently
+                    </button>
+                    <button type="button"
+                        class="btn-secondary w-full py-3.5 font-bold uppercase tracking-widest text-slate-400 text-[10px] order-1"
+                        onclick="document.getElementById('delete-modal').classList.add('hidden')">
+                        Go Back
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waive Modal -->
+    <div id="waive-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-slate-200">
+            <div class="p-8">
+                <div
+                    class="flex items-center justify-center w-16 h-16 mx-auto bg-sky-100 rounded-full mb-6 text-sky-600">
+                    <i class="fas fa-hand-holding-usd text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Waive Interest</h3>
+
+                <button type="button" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                    onclick="document.getElementById('waive-modal').classList.add('hidden')">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="p-6">
+                    <form action="/loans/waive" method="POST">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="loan_id" id="waive-loan-id">
+
+                        <div class="bg-primary/5 rounded-xl p-4 mb-6 border border-primary/10">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-slate-600">Pending Interest</span>
+                                <span class="text-lg font-bold text-primary" id="waive-pending-display"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-500">Current Outstanding</span>
+                                <span class="font-bold text-slate-700" id="waive-outstanding-display"></span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="form-group">
+                                <label class="form-label" for="waive_amount">Amount to Waive (₹)</label>
+                                <div class="relative">
+                                    <span
+                                        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">₹</span>
+                                    <input type="number" name="waive_amount" id="waive-amount" class="form-input pl-8"
+                                        required min="1" step="any">
+                                </div>
+                                <p id="waive-max-warning" class="text-xs text-danger mt-1 hidden">Cannot waive more than
+                                    pending interest.</p>
+                            </div>
+
+                            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" class="btn-secondary"
+                                    onclick="document.getElementById('waive-modal').classList.add('hidden')">Cancel</button>
+                                <button type="submit" class="btn-primary">Confirm Waiver</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <script src="/js/main.js"></script>
+        <script>
+            function filterMembers() {
+                const input = document.getElementById('member-search');
+                const filter = input.value.toLowerCase();
+                const select = document.getElementById('member-select');
+                const options = select.getElementsByTagName('option');
+
+                let visibleCount = 0;
+                for (let i = 1; i < options.length; i++) {
+                    const txtValue = options[i].textContent || options[i].innerText;
+                    if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                        options[i].style.display = "";
+                        visibleCount++;
+                    } else {
+                        options[i].style.display = "none";
+                    }
+                }
+                if (visibleCount === 1) select.selectedIndex = 1;
+            }
+
+            function openDeleteModal(id) {
+                const form = document.getElementById('delete-form');
+                form.action = `/loans/delete/${id}`;
+                document.getElementById('delete-modal').classList.remove('hidden');
+            }
+
+            let currentOutstanding = 0;
+
+            function openRepayModal(id, emi, nextDue, outstanding) {
+                document.getElementById('repay-loan-id').value = id;
+                document.getElementById('repay-amount').value = emi;
+
+                // Set Outstanding
+                currentOutstanding = parseFloat(outstanding);
+                document.getElementById('repay-outstanding-display').textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(currentOutstanding);
+
+                // Set Max Validation
+                const amountInput = document.getElementById('repay-amount');
+                amountInput.max = currentOutstanding;
+                amountInput.oninput = function () {
+                    const val = parseFloat(this.value);
+                    const warning = document.getElementById('repay-max-warning');
+                    if (val > currentOutstanding) {
+                        warning.classList.remove('hidden');
+                    } else {
+                        warning.classList.add('hidden');
+                    }
+                };
+
+                const modal = document.getElementById('repay-modal');
+                modal.classList.remove('hidden');
+
+
+                // Auto-select Month
+                if (nextDue && nextDue.length > 0) {
+                    const select = modal.querySelector('select[name="month_for"]');
+                    // Check if option exists
+                    let found = false;
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === nextDue) {
+                            select.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    // If not found (e.g. next year), maybe create it?
+                    if (!found) {
+                        const opt = document.createElement('option');
+                        opt.value = nextDue;
+                        opt.text = nextDue;
+                        opt.selected = true;
+                        select.add(opt);
+                    }
+                }
+            }
+            function openWaiveModal(id, pendingInterest, outstanding) {
+                document.getElementById('waive-loan-id').value = id;
+
+                const maxWaive = parseFloat(pendingInterest);
+                document.getElementById('waive-pending-display').textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(maxWaive);
+                document.getElementById('waive-outstanding-display').textContent = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(parseFloat(outstanding));
+
+                const waiveInput = document.getElementById('waive-amount');
+                waiveInput.max = maxWaive;
+                waiveInput.value = '';
+
+                waiveInput.oninput = function () {
+                    const val = parseFloat(this.value);
+                    const warning = document.getElementById('waive-max-warning');
+                    if (val > maxWaive) {
+                        warning.classList.remove('hidden');
+                    } else {
+                        warning.classList.add('hidden');
+                    }
+                };
+
+                document.getElementById('waive-modal').classList.remove('hidden');
+            }
+            function setFullSettlement() {
+                if (currentOutstanding > 0) {
+                    document.getElementById('repay-amount').value = currentOutstanding;
+                    const select = document.querySelector('#repay-modal select[name="month_for"]');
+
+                    // Add "Full Settlement" option if not exists
+                    let found = false;
+                    for (let i = 0; i < select.options.length; i++) {
+                        if (select.options[i].value === 'Full Settlement') {
+                            select.selectedIndex = i;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        const opt = document.createElement('option');
+                        opt.value = 'Full Settlement';
+                        opt.text = 'Full Settlement';
+                        opt.selected = true;
+                        select.add(opt);
+                    }
+                }
+            }
+
+            // EMI Calculator Logic
+            const amountInput = document.getElementById('loan-amount');
+            const rateInput = document.getElementById('loan-rate');
+            const tenureInput = document.getElementById('loan-tenure');
+            const manualEmiInput = document.getElementById('manual-emi');
+            const customInterestInput = document.getElementById('custom-interest');
+            const emiDisplay = document.getElementById('emi-display');
+            const totalDisplay = document.getElementById('total-display');
+
+            // Flag to prevent recursive updates
+            let isUpdating = false;
+
+            // Consolidate Calculator Logic
+            function updateCalculator(source) {
+                if (isUpdating) return;
+                isUpdating = true;
+
+                const P = parseFloat(amountInput.value) || 0;
+                const N = parseFloat(tenureInput.value) || 0;
+
+                // Source: 'interest' -> User changed Custom Interest
+                if (source === 'interest') {
+                    const I = parseFloat(customInterestInput.value) || 0;
+                    if (P > 0 && N > 0) {
+                        // Rate = (Interest / Principal) * 100
+                        const calculatedRate = (I / P) * 100;
+                        rateInput.value = calculatedRate.toFixed(2);
+
+                        // EMI = (Principal / N) + Interest
+                        const principalPart = P / N;
+                        const calculatedEmi = principalPart + I;
+                        manualEmiInput.value = calculatedEmi.toFixed(2);
+                    }
+                }
+                // Source: 'emi' -> User changed Manual EMI
+                else if (source === 'emi') {
+                    const E = parseFloat(manualEmiInput.value) || 0;
+                    if (P > 0 && N > 0) {
+                        // Interest Amount = EMI - (Principal / N)
+                        const principalPart = P / N;
+                        const calculatedInterest = E - principalPart;
+
+                        if (calculatedInterest >= 0) {
+                            customInterestInput.value = calculatedInterest.toFixed(2);
+                            // Rate = (Interest / Principal) * 100
+                            const calculatedRate = (calculatedInterest / P) * 100;
+                            rateInput.value = calculatedRate.toFixed(2);
+                        }
+                    }
+                }
+                // Source: 'rate' -> User changed Standard Rate (Reset overrides)
+                else if (source === 'rate') {
+                    customInterestInput.value = '';
+                    manualEmiInput.value = '';
+                }
+                // Source: 'basic' -> User changed Tenure/Principal (Recalc based on current mode)
+                else if (source === 'basic') {
+                    // If manual EMI exists, keep it dominant? Or Recalc?
+                    // Usually if Principal changes, we assume Rate stays same, so reset overrides.
+                    if (manualEmiInput.value) {
+                        // Try to maintain Rate?
+                        // Let's standard behavior: Reset overrides if P or N changes to avoid confusion.
+                        customInterestInput.value = '';
+                        manualEmiInput.value = '';
+                    }
+                }
+
+                // Final Display Logic
+                const R = parseFloat(rateInput.value) || 0;
+                const manualEmi = parseFloat(manualEmiInput.value) || 0;
+                const fmt = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 });
+
+                if (P > 0 && N > 0) {
+                    // Calculate Standard values from Rate
+                    const totalInterestNodes = P * (R / 100) * N;
+                    const standardTotal = P + totalInterestNodes;
+                    const standardEmi = standardTotal / N;
+
+                    // Determine effective values for Display
+                    let effectiveEmi = standardEmi;
+                    let effectiveTotal = standardTotal;
+
+                    if (manualEmi > 0) {
+                        effectiveEmi = manualEmi;
+                        effectiveTotal = manualEmi * N;
+                    }
+
+                    totalDisplay.textContent = fmt.format(effectiveTotal);
+
+                    // EMI Display Logic
+                    // If Manual EMI is active AND significantly different from Standard, show both.
+                    // Otherwise just show effective.
+                    if (manualEmi > 0 && Math.abs(manualEmi - standardEmi) > 1) {
+                        emiDisplay.innerHTML = `<span class="line-through text-sm text-slate-400 font-normal mr-1">${fmt.format(standardEmi)}</span> ${fmt.format(effectiveEmi)}`;
+                    } else {
+                        emiDisplay.textContent = fmt.format(effectiveEmi);
+                    }
+                } else {
+                    totalDisplay.textContent = '₹0';
+                    emiDisplay.textContent = '₹0';
+                }
+
+                isUpdating = false;
+            }
+
+            // Attach Listeners
+            if (amountInput) {
+                amountInput.addEventListener('input', () => updateCalculator('basic'));
+                tenureInput.addEventListener('input', () => updateCalculator('basic'));
+                rateInput.addEventListener('input', () => updateCalculator('rate'));
+
+                customInterestInput.addEventListener('input', () => updateCalculator('interest'));
+                manualEmiInput.addEventListener('input', () => updateCalculator('emi'));
+            }
+
+            // Toggle Loan Details Expandable Row
+            function toggleLoanDetails(index) {
+                const detailsRow = document.getElementById(`details-${index}`);
+                const icon = document.getElementById(`icon-${index}`);
+
+                if (detailsRow.classList.contains('hidden')) {
+                    detailsRow.classList.remove('hidden');
+                    icon.classList.add('rotate-90');
+                } else {
+                    detailsRow.classList.add('hidden');
+                    icon.classList.remove('rotate-90');
+                }
+            }
+        </script>
+        <script src="/js/datatable.js"></script>
+</body>
+
+</html>

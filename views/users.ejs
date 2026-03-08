@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>User Management - <%= fundName %>
+        </title>
+</head>
+
+<body class="bg-background dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <%- include('partials/sidebar') %>
+
+            <main class="main-content md:ml-64 relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                <!-- Header -->
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 px-8 py-10">
+                    <div>
+                        <h1
+                            class="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                            <i class="fas fa-users-cog text-primary"></i> Team Access
+                        </h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1 font-medium italic">Administrative controls
+                            and system privilege
+                            management</p>
+                    </div>
+                    <button class="btn-primary py-3 px-8 shadow-xl shadow-primary/30 flex items-center gap-2 group"
+                        onclick="openModal('addUserModal')">
+                        <i class="fas fa-user-plus text-sm"></i>
+                        <span class="font-black uppercase tracking-widest text-sm">Provision User</span>
+                    </button>
+                </header>
+
+                <div class="px-8 pb-12 space-y-8">
+                    <% if (msg) { %>
+                        <div
+                            class="bg-emerald-50 border border-emerald-100 text-emerald-600 px-6 py-4 rounded-2xl flex items-center gap-3 animate-slide-in">
+                            <i class="fas fa-check-circle"></i>
+                            <p class="text-sm font-bold uppercase tracking-tight">
+                                <%= msg %>
+                            </p>
+                        </div>
+                        <% } %>
+
+                            <% if (error) { %>
+                                <div
+                                    class="bg-rose-50 border border-rose-100 text-rose-600 px-6 py-4 rounded-2xl flex items-center gap-3 animate-slide-in">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <p class="text-sm font-bold uppercase tracking-tight">
+                                        <%= error %>
+                                    </p>
+                                </div>
+                                <% } %>
+
+                                    <div
+                                        class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                        <div
+                                            class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Authorized
+                                                Personnel</h3>
+                                            <span
+                                                class="text-[10px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest bg-white dark:bg-slate-700 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm">Active
+                                                Sessions</span>
+                                        </div>
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-left border-collapse table-auto">
+                                                <thead>
+                                                    <tr class="bg-slate-50/50 dark:bg-slate-800/80">
+                                                        <th
+                                                            class="px-4 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
+                                                            Identity</th>
+                                                        <th
+                                                            class="px-4 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700">
+                                                            Access Tier</th>
+                                                        <th
+                                                            class="px-4 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-700 text-right">
+                                                            Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                                                    <% users.forEach(u=> { %>
+                                                        <tr
+                                                            class="hover:bg-slate-50/50 dark:hover:bg-slate-800 transition-colors group">
+                                                            <td class="px-4 py-4">
+                                                                <div class="flex items-center gap-4">
+                                                                    <div
+                                                                        class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-300 font-bold group-hover:bg-primary group-hover:text-white transition-all border border-slate-200 dark:border-slate-600">
+                                                                        <%= u.username.charAt(0).toUpperCase() %>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div
+                                                                            class="text-sm font-black text-slate-900 dark:text-white">
+                                                                            <%= u.username %>
+                                                                        </div>
+                                                                        <div
+                                                                            class="text-[9px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                                            ID: #<%= u.id %>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td class="px-4 py-4">
+                                                                <% let
+                                                                    roleClass='bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                                                    ; if (u.role==='admin' )
+                                                                    roleClass='bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/50'
+                                                                    ; if (u.role==='manager' )
+                                                                    roleClass='bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800/50'
+                                                                    ; if (u.role==='member' )
+                                                                    roleClass='bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/50'
+                                                                    ; %>
+                                                                    <span
+                                                                        class="inline-flex items-center px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border <%= roleClass %>">
+                                                                        <%= u.role %>
+                                                                    </span>
+                                                            </td>
+                                                            <td class="px-4 py-4 text-right">
+                                                                <div class="flex items-center justify-end gap-2">
+                                                                    <button
+                                                                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-amber-50 dark:hover:bg-amber-900/30 hover:text-amber-500 dark:hover:text-amber-400 transition-all border border-transparent hover:border-amber-100 dark:hover:border-amber-800/50"
+                                                                        onclick="openResetModal('<%= u.id %>', '<%= u.username %>')"
+                                                                        title="Reset Credentials">
+                                                                        <i class="fas fa-key text-xs"></i>
+                                                                    </button>
+
+                                                                    <% if (u.id !==user.id) { %>
+                                                                        <form action="/users/delete/<%= u.id %>"
+                                                                            method="POST"
+                                                                            onsubmit="return confirm('Revoke user access permanently?');"
+                                                                            class="inline">
+                                                                            <button type="submit"
+                                                                                class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 hover:text-rose-600 dark:hover:text-rose-400 transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-800/50">
+                                                                                <i class="fas fa-trash text-xs"></i>
+                                                                            </button>
+                                                                        </form>
+                                                                        <% } else { %>
+                                                                            <span
+                                                                                class="text-[9px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-100 dark:border-slate-700">Self
+                                                                                Account</span>
+                                                                            <% } %>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <% }); %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                </div>
+            </main>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="addUserModal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden transform transition-all border border-slate-100 dark:border-slate-800">
+            <div
+                class="relative bg-gradient-to-r from-slate-900 dark:from-slate-800 to-slate-800 dark:to-slate-900 px-10 py-10 overflow-hidden">
+                <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
+                <div class="relative z-10 flex justify-between items-center text-white">
+                    <div>
+                        <h3 class="text-2xl font-black tracking-tight flex items-center gap-3">
+                            <i class="fas fa-user-plus text-primary"></i> Deploy Account
+                        </h3>
+                        <p class="text-slate-400 text-xs mt-1 font-medium italic">Provisioning system credentials for
+                            team members</p>
+                    </div>
+                    <button onclick="closeModal('addUserModal')"
+                        class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form action="/users/add" method="POST" class="p-10 space-y-8">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label
+                            class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Account
+                            Identity</label>
+                        <div class="relative group">
+                            <i
+                                class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                            <input type="text" name="username" placeholder="Unique username..." required
+                                class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 dark:text-white">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label
+                            class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Primary
+                            Credential</label>
+                        <div class="relative group">
+                            <i
+                                class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                            <input type="password" name="password" placeholder="••••••••" required
+                                class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-bold text-slate-700 font-mono dark:text-white">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 md:col-span-2">
+                        <label
+                            class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">Privilege
+                            Tier</label>
+                        <div class="relative group">
+                            <i
+                                class="fas fa-shield-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                            <select name="role" required
+                                class="w-full pl-11 pr-12 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all appearance-none font-bold text-slate-700 dark:text-white">
+                                <option value="member">Auditor (Read Only)</option>
+                                <option value="manager">Manager (Transactions)</option>
+                                <option value="admin">Administrator (Full Root)</option>
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs transition-transform group-focus-within:rotate-180"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeModal('addUserModal')"
+                        class="h-12 px-8 font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="btn-primary h-12 px-10 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/30">
+                        Confirm Deployment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="resetModal"
+        class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-100 dark:border-slate-800 animate-slide-up">
+            <div
+                class="bg-gradient-to-r from-amber-500 to-amber-600 px-10 py-10 flex justify-between items-center text-white relative">
+                <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/20 rounded-full blur-2xl opacity-20"></div>
+                <div class="relative z-10">
+                    <h3 class="text-xl font-black tracking-tight flex items-center gap-3">
+                        <i class="fas fa-key"></i> Key Rotation
+                    </h3>
+                    <p class="text-amber-100/70 text-xs mt-1 font-medium italic">Assigning new credentials for: <span
+                            id="reset-username"
+                            class="text-white font-bold underline underline-offset-4 decoration-amber-300"></span></p>
+                </div>
+                <button onclick="closeModal('resetModal')"
+                    class="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-200/60 hover:text-white hover:bg-white/20 transition-all">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <form id="reset-form" method="POST" class="p-10 space-y-8">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="space-y-2">
+                    <label
+                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1 block">New
+                        Access Key</label>
+                    <div class="relative group">
+                        <i
+                            class="fas fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-amber-500 transition-colors"></i>
+                        <input type="password" name="new_password" required placeholder="Assign new password..."
+                            class="w-full pl-11 pr-4 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-amber-500/10 focus:border-amber-500 outline-none transition-all font-bold text-slate-700 font-mono dark:text-white">
+                    </div>
+                </div>
+
+                <div class="pt-6 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closeModal('resetModal')"
+                        class="h-12 px-8 font-black text-[10px] uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="bg-amber-500 hover:bg-amber-600 h-12 px-10 rounded-2xl text-white font-black text-[10px] uppercase tracking-widest shadow-xl shadow-amber-200 transition-all active:scale-95">
+                        Issue New Key
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.querySelector('div').classList.remove('opacity-0', 'scale-95');
+            }, 10);
+        }
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.querySelector('div').classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 200);
+        }
+        function openResetModal(id, username) {
+            const form = document.getElementById('reset-form');
+            form.action = `/users/reset-password/${id}`;
+            document.getElementById('reset-username').textContent = username;
+            openModal('resetModal');
+        }
+        window.onclick = function (event) {
+            if (event.target.id.includes('Modal')) {
+                closeModal(event.target.id);
+            }
+        }
+    </script>
+</body>
+
+</html>

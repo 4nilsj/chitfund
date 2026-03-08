@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Members - Chit Fund</title>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body
+    class="bg-background dark:bg-slate-900 font-sans antialiased text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="main-content relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden md:ml-64">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-6 py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+                    <h1 class="text-2xl font-bold text-slate-800 dark:text-white">
+                        <%= type==='member' ? 'Members' : 'Public Contributors' %>
+                    </h1>
+
+                    <div class="flex items-center gap-3">
+                        <% if(user.role==='admin' ) { %>
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" @click.outside="open = false"
+                                    class="btn-secondary flex items-center gap-2">
+                                    <i class="fas fa-file-export"></i> Import/Export
+                                    <i class="fas fa-chevron-down text-xs ml-1"></i>
+                                </button>
+
+                                <div x-show="open" x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="transform opacity-0 scale-95"
+                                    x-transition:enter-end="transform opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="transform opacity-100 scale-100"
+                                    x-transition:leave-end="transform opacity-0 scale-95"
+                                    class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-100 dark:border-slate-700 py-1 z-50">
+
+                                    <a href="/reports/export/members?type=<%= type %>"
+                                        class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                        <i class="fas fa-download text-success"></i>
+                                        <span>Export to Excel</span>
+                                    </a>
+
+                                    <button
+                                        onclick="document.getElementById('import-modal').classList.remove('hidden');"
+                                        class="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left">
+                                        <i class="fas fa-upload text-primary"></i>
+                                        <span>Import from CSV</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <% } %>
+
+                                <% if (user.role !=='member' ) { %>
+                                    <button onclick="document.getElementById('add-modal').classList.remove('hidden')"
+                                        class="btn-primary flex items-center gap-2">
+                                        <i class="fas fa-plus"></i> Add New
+                                    </button>
+                                    <% } %>
+                    </div>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <!-- Search and Filters -->
+                    <div
+                        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+                        <form method="GET" action="/members" class="flex flex-col md:flex-row gap-4 items-end">
+                            <input type="hidden" name="type" value="<%= type %>">
+
+                            <div class="flex-1 w-full">
+                                <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                    <i class="fas fa-search text-slate-400 mr-1.5"></i> Search
+                                </label>
+                                <input type="text" name="search"
+                                    value="<%= typeof search !== 'undefined' ? search : '' %>"
+                                    placeholder="Search by name or contact..."
+                                    class="form-input w-full dark:bg-slate-900/50 dark:border-slate-700 dark:text-white dark:placeholder-slate-500">
+                            </div>
+
+                            <div class="w-full md:w-48">
+                                <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                    <i class="fas fa-filter text-slate-400 mr-1.5"></i> Status
+                                </label>
+                                <select name="status"
+                                    class="form-select w-full dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                                    <option value="all" <%=typeof statusFilter !=='undefined' && statusFilter==='all'
+                                        ? 'selected' : '' %>>All</option>
+                                    <option value="active" <%=typeof statusFilter !=='undefined' &&
+                                        statusFilter==='active' ? 'selected' : '' %>>Active
+                                    </option>
+                                    <option value="inactive" <%=typeof statusFilter !=='undefined' &&
+                                        statusFilter==='inactive' ? 'selected' : '' %>>Inactive
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button type="submit" class="btn-primary flex-1 md:flex-none justify-center">
+                                    <i class="fas fa-search mr-2"></i> Search
+                                </button>
+                                <a href="/members?type=<%= type %>"
+                                    class="btn-secondary flex-1 md:flex-none justify-center">
+                                    <i class="fas fa-redo mr-2"></i> Reset
+                                </a>
+                            </div>
+                        </form>
+
+                        <div
+                            class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+                            <span>
+                                <i class="fas fa-list mr-1.5"></i>
+                                Showing <%= members.length %> of <%= totalItems %> results
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Messages -->
+                    <% if(locals.error==='duplicate' ) { %>
+                        <div
+                            class="bg-danger/10 text-danger border border-danger/20 dark:border-danger/30 rounded-lg p-4 flex items-center gap-3">
+                            <i class="fas fa-exclamation-circle text-xl"></i>
+                            <div>
+                                <span class="font-bold">Duplicate Entry:</span> This <%= type %> already exists with the
+                                    same name.
+                            </div>
+                        </div>
+                        <% } %>
+
+                            <% if(locals.error==='invalid_contact' ) { %>
+                                <div
+                                    class="bg-danger/10 text-danger border border-danger/20 dark:border-danger/30 rounded-lg p-4 flex items-center gap-3">
+                                    <i class="fas fa-exclamation-circle text-xl"></i>
+                                    <div>
+                                        <span class="font-bold">Invalid Contact:</span> Mobile number must be exactly 10
+                                        digits and start with 6, 7, 8, or 9.
+                                    </div>
+                                </div>
+                                <% } %>
+
+                                    <% if(locals.error==='invalid_name' ) { %>
+                                        <div
+                                            class="bg-danger/10 text-danger border border-danger/20 dark:border-danger/30 rounded-lg p-4 flex items-center gap-3">
+                                            <i class="fas fa-exclamation-circle text-xl"></i>
+                                            <div>
+                                                <span class="font-bold">Invalid Name:</span> Name must be 2-100
+                                                characters and contain only letters, spaces, dots, and hyphens.
+                                            </div>
+                                        </div>
+                                        <% } %>
+
+                                            <!-- Members Table -->
+                                            <div id="data-table-container"
+                                                class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+
+                                                <div class="table-wrapper">
+                                                    <%- include('partials/member_table') %>
+                                                </div>
+
+                                            </div>
+                </div>
+            </main>
+    </div>
+
+    <script src="/js/datatable.js"></script>
+
+    <!-- Edit Member Modal -->
+    <div id="edit-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-200 dark:border-slate-700">
+            <div
+                class="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 flex justify-between items-center text-white">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-user-edit text-primary"></i> Edit Member
+                    </h3>
+                    <p class="text-slate-400 text-xs mt-1">Update profile and membership details</p>
+                </div>
+                <button onclick="document.getElementById('edit-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="edit-form" method="POST" class="p-8 space-y-6">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
+                    <div class="relative group">
+                        <i
+                            class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                        <input type="text" name="name" id="edit-name" required
+                            class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Contact Number</label>
+                    <div class="relative group">
+                        <i
+                            class="fas fa-mobile-alt absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                        <input type="text" name="contact" id="edit-contact" required pattern="[0-9]{10}"
+                            title="10 digit mobile number"
+                            class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono font-medium">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Type</label>
+                        <select name="type" id="edit-type" required
+                            class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium appearance-none">
+                            <option value="member">Member</option>
+                            <option value="public">Public</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Status</label>
+                        <select name="status" id="edit-status" required
+                            class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium appearance-none">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                    <button type="button" class="btn-secondary px-6 py-3 font-bold text-sm uppercase tracking-wider"
+                        onclick="document.getElementById('edit-modal').classList.add('hidden')">Cancel</button>
+                    <button type="submit"
+                        class="btn-primary px-8 py-3 font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/20">
+                        Update Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-slate-200 dark:border-slate-700">
+            <div class="p-8">
+                <div
+                    class="flex items-center justify-center w-16 h-16 mx-auto bg-rose-100 dark:bg-rose-900/30 rounded-full mb-6">
+                    <i class="fas fa-exclamation-triangle text-rose-600 dark:text-rose-400 text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white text-center mb-2">Confirm Deletion</h3>
+                <p class="text-slate-500 dark:text-slate-400 text-center mb-6 text-sm">
+                    Are you sure you want to delete <strong id="delete-member-name"
+                        class="text-slate-900 dark:text-slate-200"></strong>?
+                </p>
+                <div
+                    class="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/50 text-rose-800 dark:text-rose-300 text-xs p-4 rounded-xl mb-8">
+                    <p class="font-bold mb-2 flex items-center gap-1.5 ">
+                        <i class="fas fa-shield-alt"></i> SYSTEM WARNING:
+                    </p>
+                    <ul class="space-y-1.5 opacity-90">
+                        <li class="flex items-start gap-2">
+                            <span class="mt-1 w-1 h-1 rounded-full bg-rose-400 dark:bg-rose-500 shrink-0"></span>
+                            This action is permanent and irreversible
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="mt-1 w-1 h-1 rounded-full bg-rose-400 dark:bg-rose-500 shrink-0"></span>
+                            All associated loans will be deleted
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="mt-1 w-1 h-1 rounded-full bg-rose-400 dark:bg-rose-500 shrink-0"></span>
+                            Transaction records will be lost
+                        </li>
+                    </ul>
+                </div>
+
+                <form id="delete-form" method="POST" class="flex flex-col gap-3">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit"
+                        class="btn-primary bg-rose-600 hover:bg-rose-700 border-none w-full py-4 font-bold uppercase tracking-widest shadow-lg shadow-rose-200 order-2">
+                        Permanently Delete
+                    </button>
+                    <button type="button"
+                        class="btn-secondary w-full py-3.5 font-bold uppercase tracking-widest text-slate-500 order-1"
+                        onclick="document.getElementById('delete-modal').classList.add('hidden')">
+                        Cancel
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="add-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all border border-slate-200 dark:border-slate-700">
+            <div
+                class="bg-gradient-to-r from-primary to-primary-dark px-8 py-6 flex justify-between items-center text-white">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-3">
+                        <i class="fas fa-user-plus"></i> Add <%= type==='member' ? 'Member' : 'Contributor' %>
+                    </h3>
+                    <p class="text-primary-100/80 text-xs mt-1">Register a new person in the system</p>
+                </div>
+                <button onclick="document.getElementById('add-modal').classList.add('hidden')"
+                    class="text-white/60 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form action="/members/add" method="POST" class="p-8 space-y-6">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="type" value="<%= type %>">
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Full Name</label>
+                    <div class="relative group">
+                        <i
+                            class="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"></i>
+                        <input type="text" name="name" placeholder="Enter full name" pattern="[a-zA-Z\s\.\-]{2,100}"
+                            minlength="2" maxlength="100" required
+                            class="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium">
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mobile Number</label>
+                    <div class="relative group">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                            <span class="font-bold border-r border-slate-200 pr-3 mr-1">+91</span>
+                        </div>
+                        <input type="tel" name="contact" pattern="[6-9][0-9]{9}" maxlength="10" minlength="10"
+                            placeholder="9876543210" required
+                            class="w-full pl-20 pr-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 dark:text-white rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-mono font-medium tracking-widest"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                    </div>
+                    <p class="mt-2 text-[10px] text-slate-400 italic px-1">
+                        <i class="fas fa-info-circle mr-1"></i> SMS notifications will be sent to this number.
+                    </p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                    <button type="button" class="btn-secondary px-6 py-3 font-bold text-sm uppercase tracking-wider"
+                        onclick="document.getElementById('add-modal').classList.add('hidden')">Cancel</button>
+                    <button type="submit"
+                        class="btn-primary px-8 py-3 font-bold text-sm uppercase tracking-wider shadow-lg shadow-primary/20">
+                        <i class="fas fa-check mr-2"></i> Save Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="import-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-200 dark:border-slate-700">
+            <div
+                class="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 flex justify-between items-center text-white">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-file-import text-primary"></i> Import CSV
+                    </h3>
+                    <p class="text-slate-400 text-xs mt-1">Bulk create records from a data file</p>
+                </div>
+                <button onclick="document.getElementById('import-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                <div class="bg-primary/5 dark:bg-primary/10 border border-primary/10 p-5 rounded-2xl">
+                    <p
+                        class="text-[10px] text-primary dark:text-primary-light font-bold uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                        <i class="fas fa-info-circle"></i> Required CSV Format
+                    </p>
+                    <div
+                        class="bg-slate-900/5 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                        <code class="block text-[11px] font-mono text-slate-600 dark:text-slate-400 leading-relaxed">
+                            name,contact,type,status<br>
+                            John Doe,9876543210,member,active<br>
+                            Jane Smith,9876543211,public,active
+                        </code>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Select Data
+                        File</label>
+                    <div
+                        class="relative border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-8 hover:border-primary/50 dark:hover:border-primary/50 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all group text-center cursor-pointer">
+                        <input type="file" id="csv-file" accept=".csv"
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="space-y-2 pointer-events-none">
+                            <i
+                                class="fas fa-cloud-upload-alt text-3xl text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors"></i>
+                            <p
+                                class="text-sm font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300">
+                                Click to upload or
+                                drag
+                                CSV</p>
+                            <p class="text-[10px] text-slate-400 uppercase tracking-widest">Max file size: 2MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="import-result" class="hidden"></div>
+
+                <div class="flex flex-col gap-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button type="button"
+                        class="btn-primary w-full py-4 font-bold uppercase tracking-widest shadow-lg shadow-primary/20"
+                        onclick="importCSV()">
+                        <i class="fas fa-bolt mr-2 text-amber-300"></i> Start Import
+                    </button>
+                    <button type="button"
+                        class="btn-secondary w-full py-3.5 font-bold uppercase tracking-widest text-slate-500"
+                        onclick="document.getElementById('import-modal').classList.add('hidden')">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Import CSV function
+        async function importCSV() {
+            const fileInput = document.getElementById('csv-file');
+            const resultDiv = document.getElementById('import-result');
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function (e) {
+                const csvData = e.target.result;
+
+                try {
+                    const response = await fetch('/admin/import/members', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            csvData: csvData,
+                            type: '<%= type %>'
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    // Show results
+                    resultDiv.classList.remove('hidden');
+                    if (result.success) {
+                        let html = `<div class="p-3 bg-success/10 text-success rounded-lg border border-success/20">
+                            <div class="flex items-center gap-2 font-semibold">
+                                <i class="fas fa-check-circle"></i> Import Complete!
+                            </div>
+                            <div class="text-sm mt-1 opacity-80">Imported: ${result.imported} / ${result.total}</div>
+                        </div>`;
+
+                        if (result.errors && result.errors.length > 0) {
+                            html += `<div class="mt-3 p-3 bg-warning/10 text-warning-dark rounded-lg border border-warning/20">
+                                <div class="font-semibold flex items-center gap-2">
+                                    <i class="fas fa-exclamation-triangle"></i> Errors (${result.errors.length})
+                                </div>
+                                <ul class="list-disc list-inside mt-2 text-xs space-y-1 opacity-80">
+                                    ${result.errors.slice(0, 5).map(e => `<li>${e}</li>`).join('')}
+                                    ${result.errors.length > 5 ? `<li>... and ${result.errors.length - 5} more</li>` : ''}
+                                </ul>
+                            </div>`;
+                        }
+
+                        resultDiv.innerHTML = html;
+
+                        // Reload page after 2 seconds if successful
+                        if (result.imported > 0) {
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        }
+                    } else {
+                        resultDiv.innerHTML = `<div class="p-3 bg-danger/10 text-danger rounded-lg border border-danger/20">
+                            <div class="flex items-center gap-2 font-semibold">
+                                <i class="fas fa-times-circle"></i> Import Failed
+                            </div>
+                            <div class="text-sm mt-1 opacity-80">${result.error || 'Unknown error'}</div>
+                        </div>`;
+                    }
+                } catch (error) {
+                    resultDiv.classList.remove('hidden');
+                    resultDiv.innerHTML = `<div class="p-3 bg-danger/10 text-danger rounded-lg border border-danger/20">
+                        <div class="flex items-center gap-2 font-semibold">
+                            <i class="fas fa-times-circle"></i> Error
+                        </div>
+                        <div class="text-sm mt-1 opacity-80">${error.message}</div>
+                    </div>`;
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Any specific initialization can go here
+        });
+
+        function openEditModal(id, name, contact, type, status) {
+            const form = document.getElementById('edit-form');
+            form.action = `/members/edit/${id}`;
+            document.getElementById('edit-name').value = name;
+            document.getElementById('edit-contact').value = contact;
+            document.getElementById('edit-type').value = type;
+            document.getElementById('edit-status').value = status;
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function openDeleteModal(id, name) {
+            const form = document.getElementById('delete-form');
+            form.action = `/members/delete/${id}`;
+            document.getElementById('delete-member-name').textContent = name || 'this member';
+            document.getElementById('delete-modal').classList.remove('hidden');
+        }
+    </script>
+</body>
+
+</html>

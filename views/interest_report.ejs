@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interest Earned Report - Chit Fund</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="main-content md:ml-64 p-8">
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div>
+                        <h1 class="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <i class="fas fa-chart-line text-primary"></i> Interest Summary
+                        </h1>
+                        <p class="text-slate-500 mt-1 font-medium italic">Comprehensive tracking of fund earnings and
+                            collections</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative group">
+                            <i
+                                class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors text-sm"></i>
+                            <input type="text" id="table-search" placeholder="Filter by borrower..."
+                                class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all w-64 shadow-sm">
+                        </div>
+                        <a href="/" class="btn-secondary py-2.5 px-5">
+                            <i class="fas fa-arrow-left mr-2"></i> Dashboard
+                        </a>
+                    </div>
+                </header>
+
+                <div class="space-y-8">
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div
+                            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Interest
+                                </h3>
+                                <div class="text-2xl font-black text-slate-900 mt-1">
+                                    <%= formatCurrency(totals.totalInterest) %>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Collected</h3>
+                                <div class="text-2xl font-black text-slate-900 mt-1">
+                                    <%= formatCurrency(totals.interestCollected) %>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-md transition-shadow">
+                            <div
+                                class="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 text-2xl">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Outstanding</h3>
+                                <div class="text-2xl font-black text-slate-900 mt-1 text-amber-600">
+                                    <%= formatCurrency(totals.pendingInterest) %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interest Breakdown Table -->
+                    <div
+                        class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                        <div
+                            class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 class="text-lg font-bold text-slate-800">Interest Breakdown by Loan</h3>
+                            <span
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">Real-time
+                                Data</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Loan ID</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Borrower</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Type</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Principal</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">
+                                            Rate</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Tenure</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">
+                                            Earnings</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (loans.length===0) { %>
+                                        <tr>
+                                            <td colspan="8" class="px-8 py-12 text-center text-slate-400">
+                                                <div class="flex flex-col items-center gap-3">
+                                                    <i class="fas fa-inbox text-5xl opacity-20"></i>
+                                                    <p class="font-medium">No active loans found in record</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <% } else { %>
+                                            <% loans.forEach(function(loan) { %>
+                                                <tr class="hover:bg-slate-50/80 transition-colors group">
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <span class="font-mono text-xs font-bold text-slate-400">#<%=
+                                                                loan.id %></span>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <div
+                                                            class="font-bold text-slate-900 group-hover:text-primary transition-colors">
+                                                            <%= loan.borrower_name %>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <span
+                                                            class="badge <%= loan.borrower_type %> px-3 py-1 text-[9px]">
+                                                            <%= loan.borrower_type %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <span class="font-bold text-slate-700">
+                                                            <%= formatCurrency(loan.amount) %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50 text-right">
+                                                        <span
+                                                            class="text-xs font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                                                            <%= loan.interest_rate %>%
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <span class="text-xs font-medium text-slate-500">
+                                                            <%= loan.tenure %> months
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50 text-right">
+                                                        <div class="flex flex-col items-end">
+                                                            <span class="font-black text-primary">
+                                                                <%= formatCurrency(loan.totalInterest) %>
+                                                            </span>
+                                                            <span
+                                                                class="text-[9px] text-slate-400 uppercase tracking-tighter">Collected:
+                                                                <%= formatCurrency(loan.interestCollected) %></span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="px-8 py-5 border-b border-slate-50">
+                                                        <span class="badge <%= loan.status %>">
+                                                            <%= loan.status %>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Table filtering
+        const searchInput = document.getElementById('table-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const filter = this.value.toLowerCase();
+                const rows = document.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>

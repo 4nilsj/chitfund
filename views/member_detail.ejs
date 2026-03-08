@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>
+            <%= member.name %> - Member Details
+        </title>
+</head>
+
+<body
+    class="bg-background dark:bg-slate-900 font-sans antialiased text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main
+                class="main-content relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden md:ml-64 bg-slate-50/50 dark:bg-slate-900">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-8 py-6 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+                    <div class="flex items-center gap-6">
+                        <a href="/members"
+                            class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-2xl font-black text-slate-900 tracking-tight dark:text-white">
+                                    <%= member.name %>
+                                </h1>
+                                <span
+                                    class="badge <%= member.status === 'active' ? 'success' : 'secondary' %> text-[9px] px-2.5 py-0.5 font-black uppercase tracking-widest">
+                                    <%= member.status %>
+                                </span>
+                                <% if (member.type==='member' && member.status==='active' && !stats.paidThisMonth) { %>
+                                    <span
+                                        class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50"
+                                        title="Contribution due for this month">
+                                        <i class="fas fa-exclamation-circle mr-1"></i> Due
+                                    </span>
+                                    <% } %>
+                            </div>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span
+                                    class="text-[10px] font-black px-2 py-0.5 rounded-md bg-slate-200/50 text-slate-500 border border-slate-200 uppercase tracking-widest">
+                                    <%= member.type %>
+                                </span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                    <i class="fas fa-calendar-alt mr-1 text-primary/40"></i>
+                                    Since <%= new Date(member.created_at).toLocaleDateString() %>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="/reports/export/member/<%= member.id %>"
+                            class="btn-secondary h-11 px-6 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                            <i class="fas fa-file-excel text-emerald-500"></i> <span
+                                class="hidden sm:inline text-slate-600">Excel Export</span>
+                        </a>
+                        <a href="/reports/export/member/<%= member.id %>/pdf"
+                            class="btn-primary h-11 px-6 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-primary/20">
+                            <i class="fas fa-file-pdf"></i> <span class="hidden sm:inline">PDF Passbook</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-6 max-w-7xl mx-auto w-full space-y-6">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Profile Card -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div class="bg-slate-50 border-b border-slate-100 px-8 py-6">
+                                <h2
+                                    class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <i class="fas fa-id-card text-primary text-xs"></i> Profile Details
+                                </h2>
+                            </div>
+
+                            <div class="p-8 space-y-6">
+                                <div>
+                                    <label
+                                        class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Primary
+                                        Contact</label>
+                                    <div class="text-xl font-black text-slate-900 tracking-tight font-mono">
+                                        <%= member.contact || 'N/A' %>
+                                    </div>
+                                </div>
+
+                                <div class="pt-6 border-t border-slate-50">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <label
+                                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Net
+                                                Balance</label>
+                                            <div
+                                                class="text-3xl font-black <%= (member.balance || 0) < 0 ? 'text-rose-600' : 'text-emerald-600' %>">
+                                                <%= formatCurrency(member.balance || 0) %>
+                                            </div>
+                                        </div>
+                                        <% let phone=member.contact ? member.contact.replace(/\D/g, '' ) : '' ; if
+                                            (phone.length>= 10) {
+                                            let outstanding = Math.abs(member.balance || 0);
+                                            let msg = `Hello ${member.name}, your current outstanding balance is
+                                            ${formatCurrency(outstanding)}.`;
+                                            let waUrl =
+                                            `https://wa.me/91${phone.slice(-10)}?text=${encodeURIComponent(msg)}`;
+                                            %>
+                                            <a href="<%= waUrl %>" target="_blank"
+                                                class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                                                <i class="fab fa-whatsapp text-2xl"></i>
+                                            </a>
+                                            <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Stats -->
+                        <div
+                            class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div class="bg-slate-50 border-b border-slate-100 px-8 py-6">
+                                <h2
+                                    class="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                    <i class="fas fa-chart-pie text-indigo-500 text-xs"></i> Financial Snapshot
+                                </h2>
+                            </div>
+
+                            <div class="p-8 grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <!-- Summary -->
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                                        <div
+                                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                            Contribution</div>
+                                        <div class="text-xl font-black text-emerald-600">
+                                            <%= formatCurrency(stats.contributed) %>
+                                        </div>
+                                    </div>
+                                    <div class="p-5 rounded-2xl bg-slate-50 border border-slate-100">
+                                        <div
+                                            class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                                            Borrowed</div>
+                                        <div class="text-xl font-black text-slate-900">
+                                            <%= formatCurrency(stats.borrowed) %>
+                                        </div>
+                                    </div>
+                                    <div
+                                        class="col-span-2 p-6 rounded-2xl bg-amber-50 border border-amber-100 relative overflow-hidden group">
+                                        <div
+                                            class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                                            <i class="fas fa-coins text-8xl text-amber-600"></i>
+                                        </div>
+                                        <div class="relative z-10">
+                                            <div
+                                                class="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-2">
+                                                Current Total Debt</div>
+                                            <div class="text-4xl font-black text-amber-700 tracking-tighter">
+                                                <%= formatCurrency(loanBreakdown.calculatedOutstanding) %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Breakdown -->
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pr.
+                                            Pending</span>
+                                        <span class="text-sm font-black text-slate-700">
+                                            <%= formatCurrency(loanBreakdown.principalPending) %>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pr.
+                                            Cleared</span>
+                                        <span class="text-sm font-black text-emerald-600">
+                                            <%= formatCurrency(loanBreakdown.principalPaid) %>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center py-2 border-b border-slate-50">
+                                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Int.
+                                            Pending</span>
+                                        <span class="text-sm font-black text-amber-600">
+                                            <%= formatCurrency(loanBreakdown.interestPending) %>
+                                        </span>
+                                    </div>
+
+                                    <div class="pt-4">
+                                        <div
+                                            class="flex justify-between text-[10px] font-black uppercase tracking-widest mb-3">
+                                            <span class="text-slate-400">Repayment Plan</span>
+                                            <span class="text-primary">
+                                                <%= loanBreakdown.emisPaid %> / <%= loanBreakdown.totalEmis %> Cycles
+                                            </span>
+                                        </div>
+                                        <div
+                                            class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200/50 shadow-inner">
+                                            <% const progress=loanBreakdown.totalEmis> 0
+                                                ? (loanBreakdown.emisPaid / loanBreakdown.totalEmis * 100)
+                                                : 0;
+                                                %>
+                                                <div class="bg-gradient-to-r from-primary to-primary-light h-full rounded-full transition-all duration-1000 shadow-md"
+                                                    style="width: <%= progress %>%;">
+                                                </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <!-- Transaction History -->
+                        <div
+                            class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                            <div
+                                class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                                <h2 class="text-lg font-bold text-slate-800">Ledger Activity</h2>
+                                <span
+                                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">Recent
+                                    Records</span>
+                            </div>
+                            <div class="overflow-x-auto flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50/50">
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Date</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Type</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">
+                                                Amount</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <% if(transactions.length===0) { %>
+                                            <tr>
+                                                <td colspan="4"
+                                                    class="px-8 py-12 text-center text-slate-400 italic font-medium">No
+                                                    financial movements captured</td>
+                                            </tr>
+                                            <% } %>
+                                                <% transactions.forEach(t=> { %>
+                                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                                        <td class="px-6 py-4 text-sm font-medium text-slate-600">
+                                                            <%= new Date(t.date).toLocaleDateString() %>
+                                                        </td>
+                                                        <td class="px-6 py-4">
+                                                            <span
+                                                                class="badge <%= t.type === 'contribution' ? 'success' : (t.type === 'repayment' ? 'info' : (t.type === 'expense' ? 'danger' : 'warning')) %> text-[9px] px-2 py-0.5">
+                                                                <%= t.type %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-6 py-4 text-right">
+                                                            <span class="text-sm font-black text-slate-900">
+                                                                <%= formatCurrency(t.amount) %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="px-6 py-4">
+                                                            <div class="flex items-center justify-between">
+                                                                <span
+                                                                    class="text-xs text-slate-500 font-medium truncate max-w-[200px]">
+                                                                    <%= t.remarks %>
+                                                                </span>
+                                                                <% if (t.receipt_path) { %>
+                                                                    <a href="/<%= t.receipt_path %>" target="_blank"
+                                                                        class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+                                                                        <i class="fas fa-receipt text-xs"></i>
+                                                                    </a>
+                                                                    <% } %>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Loan History -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                            <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+                                <h2 class="text-lg font-bold text-slate-800">Loan Portfolio</h2>
+                            </div>
+                            <div class="p-6 space-y-6 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                <% if(loans.length===0) { %>
+                                    <div class="text-center py-12 text-slate-300">
+                                        <i class="fas fa-folder-open text-4xl mb-4 block opacity-20"></i>
+                                        <p class="text-sm font-medium">No active or past loans</p>
+                                    </div>
+                                    <% } %>
+                                        <% loans.forEach(l=> { %>
+                                            <div
+                                                class="group bg-white border border-slate-100 rounded-2xl p-5 hover:border-primary/30 hover:shadow-lg transition-all relative overflow-hidden">
+                                                <div
+                                                    class="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
+                                                    <i class="fas fa-hand-holding-usd text-6xl"></i>
+                                                </div>
+                                                <div class="flex justify-between items-start mb-4 relative z-10">
+                                                    <span
+                                                        class="font-mono text-[10px] font-bold text-slate-300 uppercase tracking-widest">#
+                                                        <%= l.id %>
+                                                    </span>
+                                                    <span
+                                                        class="badge <%= l.status === 'active' ? 'success' : 'secondary' %> text-[8px] font-black px-2 py-0.5">
+                                                        <%= l.status %>
+                                                    </span>
+                                                </div>
+                                                <div class="mb-5 relative z-10">
+                                                    <div class="text-2xl font-black text-slate-900 tracking-tight">
+                                                        <%= formatCurrency(l.amount) %>
+                                                    </div>
+                                                    <div
+                                                        class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">
+                                                        Principal Disbursed</div>
+                                                </div>
+
+                                                <div
+                                                    class="flex justify-between items-center pt-5 border-t border-slate-50 relative z-10">
+                                                    <div>
+                                                        <span
+                                                            class="text-[9px] font-black text-rose-400 uppercase tracking-widest block mb-0.5">Due
+                                                            To Date</span>
+                                                        <span class="text-sm font-black text-rose-600">
+                                                            <%= formatCurrency(l.outstanding) %>
+                                                        </span>
+                                                    </div>
+                                                    <a href="/loans/<%= l.id %>"
+                                                        class="w-10 h-10 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-sm">
+                                                        <i class="fas fa-chevron-right text-xs"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <% }); %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+    </div>
+</body>
+
+</html>

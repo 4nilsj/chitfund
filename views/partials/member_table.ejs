@@ -1,0 +1,215 @@
+<div class="overflow-x-auto">
+    <table class="w-full text-left border-collapse">
+        <thead>
+            <tr
+                class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th data-sortable="true" data-column="id"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'id' ? sortDir : '' %>"
+                    class="py-4 px-6 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    ID
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'id' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="name"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'name' ? sortDir : '' %>"
+                    class="py-4 px-6 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Name
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'name' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="contact"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'contact' ? sortDir : '' %>"
+                    class="py-4 px-6 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Contact
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'contact' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th class="py-4 px-6">Balance</th>
+                <th data-sortable="true" data-column="status"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'status' ? sortDir : '' %>"
+                    class="py-4 px-6 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Status
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'status' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th class="py-4 px-6 text-right">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            <% if (members.length===0) { %>
+                <tr>
+                    <td colspan="6" class="py-16 px-6 text-center">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <div
+                                class="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-users text-4xl text-slate-400 dark:text-slate-500"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">
+                                No <%= type==='member' ? 'members' : 'contributors' %> found
+                            </h3>
+                            <p class="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                                It looks like there are no <%= type==='member' ? 'members' : 'public contributors' %>
+                                    here yet.
+                                    Get started by adding a new one.
+                            </p>
+                            <% if (user.role !=='member' ) { %>
+                                <button onclick="document.getElementById('add-modal').classList.remove('hidden')"
+                                    class="btn-primary mt-4 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all">
+                                    <i class="fas fa-user-plus mr-2"></i>
+                                    Add New
+                                </button>
+                                <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% } else { %>
+                    <% members.forEach(function(m) { %>
+                        <tr
+                            class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors <%= m.status === 'inactive' ? 'bg-slate-50/50 dark:bg-slate-800/50 opacity-70' : '' %>">
+                            <td class="py-4 px-6 text-slate-400 dark:text-slate-500 font-mono text-sm">
+                                #<%= m.id %>
+                            </td>
+                            <td class="py-4 px-6 font-medium text-slate-800 dark:text-slate-200">
+                                <div class="flex items-center gap-2">
+                                    <%= m.name %>
+                                        <% if (m.type==='member' && m.status==='active' && !m.paidThisMonth) { %>
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50"
+                                                title="Contribution due for this month">
+                                                <i class="fas fa-exclamation-circle mr-1"></i> Due
+                                            </span>
+                                            <% } %>
+                                </div>
+                            </td>
+                            <td class="py-4 px-6 text-slate-600 dark:text-slate-400 font-mono">
+                                <%= m.contact %>
+                            </td>
+                            <td
+                                class="py-4 px-6 font-medium <%= (m.balance || 0) < 0 ? 'text-danger' : 'text-success' %>">
+                                <%= formatCurrency(m.balance || 0) %>
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="badge <%= m.status === 'active' ? 'success' : 'secondary' %>">
+                                    <%= m.status==='active' ? 'Active' : 'Inactive' %>
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-right space-x-2">
+                                <a href="/members/<%= m.id %>"
+                                    class="btn-icon btn-ghost text-slate-500 hover:text-primary" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                <% let phone=m.contact.replace(/\D/g, '' ); let waUrl='#' ; if (phone.length>=10) {
+                                    let outstanding = Math.abs(m.balance || 0);
+                                    let msg = `Hello ${m.name}, your current outstanding balance is
+                                    ${formatCurrency(outstanding)}. Please pay by the due date.`;
+                                    waUrl = `https://wa.me/91${phone.slice(-10)}?text=${encodeURIComponent(msg)}`;
+                                    }
+                                    %>
+                                    <% if (waUrl !=='#' ) { %>
+                                        <a href="<%= waUrl %>" target="_blank"
+                                            class="btn-icon btn-ghost text-slate-400 hover:text-[#25D366]"
+                                            title="Send WhatsApp">
+                                            <i class="fab fa-whatsapp text-lg"></i>
+                                        </a>
+                                        <% } %>
+
+                                            <% if(user.role==='admin' ) { %>
+                                                <form action="/members/status/toggle" method="POST" class="inline">
+                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                    <input type="hidden" name="member_id" value="<%= m.id %>">
+                                                    <input type="hidden" name="status"
+                                                        value="<%= m.status === 'active' ? 'inactive' : 'active' %>">
+                                                    <button type="submit"
+                                                        class="btn-icon btn-ghost <%= m.status === 'active' ? 'text-slate-400 hover:text-warning' : 'text-slate-400 hover:text-success' %>"
+                                                        title="<%= m.status === 'active' ? 'Deactivate' : 'Activate' %>">
+                                                        <i
+                                                            class="fas <%= m.status === 'active' ? 'fa-user-slash' : 'fa-user-check' %>"></i>
+                                                    </button>
+                                                </form>
+
+                                                <form action="/members/move-to-public" method="POST" class="inline">
+                                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                    <input type="hidden" name="member_id" value="<%= m.id %>">
+                                                    <button type="submit"
+                                                        class="btn-icon btn-ghost text-slate-400 hover:text-primary"
+                                                        title="Move to <%= m.type === 'member' ? 'Public' : 'Member' %>">
+                                                        <i class="fas fa-exchange-alt"></i>
+                                                    </button>
+                                                </form>
+                                                <% } %>
+
+                                                    <% if (user.role !=='member' ) { %>
+                                                        <button type="button"
+                                                            class="btn-icon btn-ghost text-slate-400 hover:text-blue-600"
+                                                            title="Edit Member"
+                                                            onclick="openEditModal('<%= m.id %>', '<%= m.name %>', '<%= m.contact %>', '<%= m.type %>', '<%= m.status %>')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+
+                                                        <% if(user.role==='admin' ) { %>
+                                                            <button type="button"
+                                                                class="btn-icon btn-ghost text-slate-400 hover:text-danger"
+                                                                title="Delete Member"
+                                                                onclick="openDeleteModal('<%= m.id %>', '<%= m.name %>')">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                            <% } %>
+                                                                <% } %>
+                            </td>
+                        </tr>
+                        <% }); %>
+                            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+<% if(typeof pagination !=='undefined' && pagination.totalPages> 1) { %>
+    <div
+        class="px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 pagination-container">
+        <div class="flex-1 flex justify-between sm:hidden">
+            <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %>&<%= typeof type !== 'undefined' ? 'type=' + type : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' ? '&status=' + statusFilter : '' %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %>"
+                class="btn-secondary pagination-item <%= pagination.currentPage <= 1 ? 'disabled pointer-events-none opacity-50' : '' %>">Previous</a>
+            <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %>&<%= typeof type !== 'undefined' ? 'type=' + type : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' ? '&status=' + statusFilter : '' %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %>"
+                class="btn-secondary pagination-item <%= pagination.currentPage >= pagination.totalPages ? 'disabled pointer-events-none opacity-50' : '' %>">Next</a>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-slate-700 dark:text-slate-300">
+                    Item <span class="font-medium">
+                        <%= (pagination.currentPage - 1) * 20 + 1 %>
+                    </span> to <span class="font-medium">
+                        <%= Math.min(pagination.currentPage * 20, typeof totalItems !=='undefined' ? totalItems : 0) %>
+                    </span> of <span class="font-medium">
+                        <%= typeof totalItems !=='undefined' ? totalItems : 0 %>
+                    </span> results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %>&<%= typeof type !== 'undefined' ? 'type=' + type : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' ? '&status=' + statusFilter : '' %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %>"
+                        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 pagination-item <%= pagination.currentPage <= 1 ? 'disabled pointer-events-none opacity-50' : '' %>">
+                        <span class="sr-only">Previous</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+
+                    <% for(let i=1; i <=pagination.totalPages; i++) { %>
+                        <a href="<%= pagination.baseUrl %>?page=<%= i %>&<%= typeof type !== 'undefined' ? 'type=' + type : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' ? '&status=' + statusFilter : '' %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %>"
+                            class="relative inline-flex items-center px-4 py-2 border text-sm font-medium pagination-item <%= pagination.currentPage === i 
+                                ? 'z-10 bg-primary/10 border-primary text-primary dark:bg-primary/20 dark:text-primary-light' 
+                                : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600' %>">
+                            <%= i %>
+                        </a>
+                        <% } %>
+
+                            <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %>&<%= typeof type !== 'undefined' ? 'type=' + type : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %><%= typeof statusFilter !== 'undefined' ? '&status=' + statusFilter : '' %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %>"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-600 pagination-item <%= pagination.currentPage >= pagination.totalPages ? 'disabled pointer-events-none opacity-50' : '' %>">
+                                <span class="sr-only">Next</span>
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                </nav>
+            </div>
+        </div>
+    </div>
+    <% } %>

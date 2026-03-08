@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: chitfund-app
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist Database File
+      - ./chitfund.db:/usr/src/app/chitfund.db
+      # Persist Backups
+      - ./backups:/usr/src/app/backups
+      # Persist Receipts/Uploads
+      - ./uploads:/usr/src/app/uploads
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000

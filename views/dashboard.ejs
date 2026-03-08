@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Chit Fund Manager</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="main-content flex-1 overflow-y-auto md:ml-64 p-8">
+                <header class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1">
+                            <%= new Date().toLocaleDateString('en-US', { weekday: 'long' , year: 'numeric' ,
+                                month: 'long' , day: 'numeric' }) %>
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="btn-primary" onclick="openMonthlyPaymentModal()">
+                            <i class="fas fa-wallet"></i> Monthly Payment
+                        </button>
+                        <button class="btn-secondary"
+                            onclick="document.getElementById('txn-modal').classList.remove('hidden')">
+                            <i class="fas fa-plus-circle text-primary"></i> Transaction
+                        </button>
+                        <a href="/export" class="btn-secondary px-3" title="Export JSON">
+                            <i class="fas fa-download"></i>
+                        </a>
+                    </div>
+                </header>
+
+                <% if(locals.msg) { %>
+                    <div
+                        class="mb-6 p-4 rounded-lg border flex items-center gap-3 <%= locals.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : (locals.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-green-50 border-green-200 text-green-700') %>">
+                        <i
+                            class="fas <%= locals.type === 'error' ? 'fa-exclamation-circle' : (locals.type === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle') %>"></i>
+                        <%= msg %>
+                    </div>
+                    <% } %>
+
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div class="card relative overflow-hidden group">
+                                <div
+                                    class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <i class="fas fa-wallet text-6xl text-primary"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Fund Balance
+                                    </p>
+                                    <h3 id="stat-fund-balance"
+                                        class="text-2xl font-bold text-slate-900 dark:text-white">
+                                        <%= fundBalance %>
+                                    </h3>
+                                </div>
+                            </div>
+
+                            <% if (!locals.isMember) { %>
+                                <div class="card relative overflow-hidden group">
+                                    <div
+                                        class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                        <i class="fas fa-users text-6xl text-emerald-500"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Active
+                                            Members</p>
+                                        <h3 id="stat-active-members"
+                                            class="text-2xl font-bold text-slate-900 dark:text-white">
+                                            <%= membersCount %>
+                                        </h3>
+                                    </div>
+                                </div>
+                                <% } %>
+
+                                    <div class="card relative overflow-hidden group cursor-pointer hover:shadow-md transition-all"
+                                        onclick="openCollectionDetails()">
+                                        <div
+                                            class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <i class="fas fa-calendar-check text-6xl text-violet-500"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                                Monthly Collection</p>
+                                            <h3 id="stat-monthly-collection"
+                                                class="text-2xl font-bold text-slate-900 dark:text-white">
+                                                <%= monthlyCollection %>
+                                            </h3>
+                                            <p class="text-xs text-violet-600 mt-2 font-medium flex items-center gap-1">
+                                                View Details <i class="fas fa-arrow-right text-[10px]"></i>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <a href="/loans"
+                                        class="card relative overflow-hidden group hover:shadow-md transition-all">
+                                        <div
+                                            class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                            <i class="fas fa-file-invoice-dollar text-6xl text-amber-500"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                                Outstanding Loans</p>
+                                            <h3 id="stat-outstanding-loans"
+                                                class="text-2xl font-bold text-slate-900 dark:text-white">
+                                                <%= outstanding %>
+                                            </h3>
+                                        </div>
+                                    </a>
+
+                                    <% if (!locals.isMember) { %>
+                                        <a href="/reports/interest"
+                                            class="card relative overflow-hidden group hover:shadow-md transition-all">
+                                            <div
+                                                class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                                <i class="fas fa-chart-line text-6xl text-cyan-500"></i>
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">
+                                                    Interest Collected
+                                                </p>
+                                                <h3 id="stat-interest-collected"
+                                                    class="text-2xl font-bold text-slate-900 dark:text-white">
+                                                    <%= totalInterestCollected %>
+                                                </h3>
+                                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Projected:
+                                                    <%= totalInterestEarned %>
+                                                </p>
+                                            </div>
+                                        </a>
+                                        <% } %>
+                        </div>
+
+                        <!-- Main Grid -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <!-- Left Column (Charts & Tables) -->
+                            <div class="lg:col-span-2 space-y-8">
+
+                                <!-- Charts Section -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="card">
+                                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Collections
+                                            Trend</h3>
+                                        <div class="h-64">
+                                            <canvas id="collectionChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="card">
+                                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Fund
+                                            Distribution</h3>
+                                        <div class="h-64">
+                                            <canvas id="fundChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Recent Transactions -->
+                                <div class="card">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h2 class="text-lg font-bold text-slate-800 dark:text-white">Recent Transactions
+                                        </h2>
+                                        <a href="/transactions"
+                                            class="text-sm font-medium text-primary hover:text-primary-dark">View
+                                            All</a>
+                                    </div>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr
+                                                    class="border-b border-slate-100 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                    <th class="py-3 px-2">ID</th>
+                                                    <th class="py-3 px-2">Date</th>
+                                                    <th class="py-3 px-2">Type</th>
+                                                    <th class="py-3 px-2">Amount</th>
+                                                    <th class="py-3 px-2">Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody
+                                                class="text-sm text-slate-700 dark:text-slate-300 divide-y divide-slate-50 dark:divide-slate-700/50">
+                                                <% recentTransactions.forEach(function(txn) { %>
+                                                    <tr
+                                                        class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors">
+                                                        <td class="py-3 px-2 text-slate-400 dark:text-slate-500">#<%=
+                                                                txn.id %>
+                                                        </td>
+                                                        <td class="py-3 px-2">
+                                                            <%= txn.date %>
+                                                        </td>
+                                                        <td class="py-3 px-2">
+                                                            <span
+                                                                class="badge <%= txn.type === 'contribution' ? 'success' : (txn.type === 'repayment' ? 'info' : (txn.type === 'expense' ? 'danger' : 'warning')) %>">
+                                                                <%= txn.type %>
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-3 px-2 font-medium">
+                                                            <%= formatCurrency(txn.amount) %>
+                                                        </td>
+                                                        <td
+                                                            class="py-3 px-2 text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
+                                                            <%= txn.remarks %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column (Upcoming Payments) -->
+                            <div class="lg:col-span-1">
+                                <% if (!locals.isMember && locals.upcomingPayments && upcomingPayments.length> 0) { %>
+                                    <div class="card h-full">
+                                        <div class="flex justify-between items-center mb-6">
+                                            <h2
+                                                class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                                <i class="fas fa-calendar-alt text-primary"></i> Upcoming
+                                            </h2>
+                                            <span
+                                                class="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full">
+                                                <%= upcomingPayments.length %> Due
+                                            </span>
+                                        </div>
+                                        <div class="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                                            <% upcomingPayments.forEach(function(payment) { %>
+                                                <div
+                                                    class="p-4 rounded-lg border <%= payment.overdue ? 'border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10' : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50' %> hover:shadow-sm transition-shadow">
+                                                    <div class="flex justify-between items-start mb-2">
+                                                        <div>
+                                                            <p class="font-semibold text-slate-800 dark:text-slate-200">
+                                                                <%= payment.memberName %>
+                                                            </p>
+                                                            <p class="text-xs text-slate-500 dark:text-slate-400">Due:
+                                                                <%= new Date(payment.dueDate).toLocaleDateString() %>
+                                                            </p>
+                                                        </div>
+                                                        <span
+                                                            class="text-sm font-bold <%= payment.overdue ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300' %>">
+                                                            <%= formatCurrency(payment.amount) %>
+                                                        </span>
+                                                    </div>
+                                                    <div class="flex justify-between items-center mt-3">
+                                                        <span
+                                                            class="badge text-[10px] <%= payment.type === 'contribution' ? 'info' : 'warning' %>">
+                                                            <%= payment.type==='contribution' ? 'Contribution' : 'EMI #'
+                                                                + payment.loanId %>
+                                                        </span>
+                                                        <% if (payment.overdue) { %>
+                                                            <span
+                                                                class="text-xs font-semibold text-red-600 flex items-center gap-1">
+                                                                <i class="fas fa-exclamation-triangle"></i> Overdue
+                                                            </span>
+                                                            <% } else { %>
+                                                                <span
+                                                                    class="text-xs font-medium text-slate-400 dark:text-slate-500">Upcoming</span>
+                                                                <% } %>
+                                                    </div>
+                                                </div>
+                                                <% }); %>
+                                        </div>
+                                    </div>
+                                    <% } %>
+                            </div>
+                        </div>
+
+            </main>
+    </div>
+
+    <!-- Modals (Styled with Tailwind) -->
+    <!-- Transaction Modal -->
+    <div id="txn-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 perform-card w-full max-w-md rounded-xl shadow-2xl p-0 overflow-hidden transform transition-all border border-transparent dark:border-slate-700">
+            <div
+                class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white">Record Transaction</h3>
+                <button onclick="document.getElementById('txn-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form action="/transactions/add" method="POST" class="p-6 space-y-4">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="date" required value="<%= new Date().toISOString().split('T')[0] %>">
+                </div>
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Transaction Type</label>
+                    <div class="relative">
+                        <i class="fas fa-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <select name="type" id="txn-type" required
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+                            <option value="contribution">Contribution</option>
+                            <option value="repayment">Loan Repayment</option>
+                            <option value="disbursement">Disbursement</option>
+                            <option value="expense">Expense</option>
+                            <option value="penalty">Penalty</option>
+                        </select>
+                        <i
+                            class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Target Member</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <select name="member_id" id="txn-member" required
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer">
+                            <option value="">-- System Transaction --</option>
+                            <% members.forEach(function(m) { %>
+                                <option value="<%= m.id %>">
+                                    <%= m.name %>
+                                </option>
+                                <% }); %>
+                        </select>
+                        <i
+                            class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Amount (₹)</label>
+                    <div class="relative">
+                        <i
+                            class="fas fa-indian-rupee-sign absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                        <input type="number" name="amount" required min="0" step="1"
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-bold text-lg"
+                            placeholder="0.00">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Remarks</label>
+                    <div class="relative">
+                        <i class="fas fa-comment-alt absolute left-3 top-3 text-slate-400 text-sm"></i>
+                        <textarea name="remarks" placeholder="Optional notes..." rows="2"
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" class="btn-secondary flex-1 justify-center py-2.5"
+                        onclick="document.getElementById('txn-modal').classList.add('hidden')">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1 justify-center">
+                        <i class="fas fa-check-circle mr-2 text-sm"></i> Confirm
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Monthly Payment Modal -->
+    <div id="monthly-payment-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-reveal border border-transparent dark:border-slate-700">
+            <div class="bg-gradient-to-r from-primary to-primary-light px-6 py-5 flex justify-between items-center">
+                <h3 class="text-white text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-wallet"></i> Monthly Collection
+                </h3>
+                <button onclick="document.getElementById('monthly-payment-modal').classList.add('hidden')"
+                    class="text-white/80 hover:text-white transition-colors">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form action="/payments/monthly" method="POST" id="monthly-payment-form" class="p-6 space-y-5">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-group">
+                        <label class="text-slate-700 font-semibold mb-2 block text-sm">Member</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <select name="member_id" id="monthly-member-select" required
+                                onchange="updateMonthlyObligation()"
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all appearance-none cursor-pointer text-sm">
+                                <option value="">-- Select --</option>
+                                <% members.forEach(function(m) { %>
+                                    <option value="<%= m.id %>">
+                                        <%= m.name %>
+                                    </option>
+                                    <% }); %>
+                            </select>
+                            <i
+                                class="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="text-slate-700 font-semibold mb-2 block text-sm">Month</label>
+                        <div class="relative">
+                            <i
+                                class="fas fa-calendar absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input type="month" name="month" id="monthly-month-select" required
+                                onchange="updateMonthlyObligation()" value="<%= new Date().toISOString().slice(0, 7) %>"
+                                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="payment-breakdown"
+                    class="hidden bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 space-y-4 shadow-inner">
+                    <h4
+                        class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fas fa-info-circle"></i> Outstanding Details
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500 dark:text-slate-400">Fixed Contribution</span>
+                            <span id="breakdown-contribution"
+                                class="font-bold text-slate-800 dark:text-slate-200">₹0</span>
+                        </div>
+                        <div id="breakdown-loans" class="space-y-2 text-sm"></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <span class="font-bold text-slate-800 dark:text-white">Expected Total</span>
+                        <span id="breakdown-total"
+                            class="font-black text-2xl text-primary dark:text-primary-light">₹0</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Actual Amount Received (₹)</label>
+                    <div class="relative">
+                        <i
+                            class="fas fa-indian-rupee-sign absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                        <input type="number" name="amount" id="monthly-amount" readonly required
+                            class="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-900/50 font-black text-2xl text-slate-900 dark:text-white border-2 border-slate-200 dark:border-slate-700 rounded-2xl outline-none transition-all">
+                    </div>
+                </div>
+
+                <div
+                    class="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="allow_partial" id="allow-partial" onchange="togglePartialPayment()"
+                            class="sr-only peer">
+                        <div
+                            class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
+                        </div>
+                        <span class="ml-3 text-sm font-bold text-slate-600 dark:text-slate-300">Manual Amount
+                            Entry</span>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="text-slate-700 font-semibold mb-2 block text-sm">Collection Remarks</label>
+                    <input type="text" name="remarks" placeholder="Optional notes for this collection period..."
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm">
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" class="btn-secondary flex-1 justify-center py-3"
+                        onclick="document.getElementById('monthly-payment-modal').classList.add('hidden')">Close</button>
+                    <button type="submit" class="btn-primary flex-1 justify-center py-3 shadow-lg shadow-primary/30">
+                        <i class="fas fa-save mr-2"></i> Post Collection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Collection Details Modal -->
+    <div id="collection-details-modal"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[80vh] flex flex-col border border-transparent dark:border-slate-700">
+            <div
+                class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <i class="fas fa-list-alt text-primary"></i> <span id="collection-month-name">Current Month</span>
+                </h3>
+                <button onclick="document.getElementById('collection-details-modal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div id="collection-details-loading" class="text-center py-8 text-slate-500">
+                    <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary"></i>
+                    <p>Loading details...</p>
+                </div>
+                <div id="collection-details-content" class="hidden">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead class="bg-slate-50 dark:bg-slate-800/80 sticky top-0">
+                            <tr>
+                                <th class="py-2 px-3 font-semibold text-slate-500 dark:text-slate-400">Date</th>
+                                <th class="py-2 px-3 font-semibold text-slate-500 dark:text-slate-400">Member</th>
+                                <th class="py-2 px-3 font-semibold text-slate-500 dark:text-slate-400">Type</th>
+                                <th class="py-2 px-3 font-semibold text-slate-500 dark:text-slate-400 text-right">Amount
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="collection-details-body" class="divide-y divide-slate-100 dark:divide-slate-700">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                    <div id="no-collections-msg" class="hidden text-center py-8 text-slate-400">
+                        No collections recorded for this month.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/main.js"></script>
+    <script>
+        // Copy existing script logic for Charts and Modals here
+        // Re-using the logic from the original file, just ensuring selectors match
+
+        let collectionChartInst = null;
+        let fundChartInst = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Summary Charts
+            const ctx1 = document.getElementById('collectionChart');
+            const ctx2 = document.getElementById('fundChart');
+
+            if (ctx1) {
+                collectionChartInst = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Current Month'],
+                        datasets: [{
+                            label: 'Collection',
+                            data: [parseFloat('<%= monthlyCollection %>'.replace(/[^0-9.-]+/g, "")) || 0],
+                            backgroundColor: '#10b981',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, grid: { color: 'rgba(148, 163, 184, 0.1)' } }, x: { grid: { display: false } } }
+                    }
+                });
+            }
+
+            if (ctx2) {
+                fundChartInst = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Outstanding', 'Balance'],
+                        datasets: [{
+                            data: [
+                                parseFloat('<%= outstanding %>'.replace(/[^0-9.-]+/g, "")) || 0,
+                                parseFloat('<%= fundBalance %>'.replace(/[^0-9.-]+/g, "")) || 0
+                            ],
+                            backgroundColor: ['#f59e0b', '#3b82f6'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%' }
+                });
+            }
+
+            // --- REAL-TIME WEB SOCKET IMPLEMENTATION ---
+            const socket = io();
+
+            socket.on('dashboard_update', async () => {
+                try {
+                    console.log("Real-time update received!");
+                    const response = await fetch('/dashboard/stats');
+                    const json = await response.json();
+
+                    if (json.success) {
+                        const data = json.data;
+
+                        // Update Stat Cards (DOM Elements)
+                        const format = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(val || 0);
+
+                        document.getElementById('stat-fund-balance').innerText = data.fundBalance;
+                        document.getElementById('stat-monthly-collection').innerText = data.monthlyCollection;
+                        if (document.getElementById('stat-active-members')) document.getElementById('stat-active-members').innerText = data.membersCount;
+                        if (document.getElementById('stat-outstanding-loans')) document.getElementById('stat-outstanding-loans').innerText = data.outstanding;
+                        if (document.getElementById('stat-interest-collected')) document.getElementById('stat-interest-collected').innerText = data.totalInterestCollected;
+
+                        // Update Chart.js Data
+                        if (collectionChartInst) {
+                            collectionChartInst.data.datasets[0].data = [data.monthlyCollectionRaw || 0];
+                            collectionChartInst.update();
+                        }
+
+                        if (fundChartInst) {
+                            fundChartInst.data.datasets[0].data = [data.outstandingRaw || 0, data.fundBalanceRaw || 0];
+                            fundChartInst.update();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to process real-time update", e);
+                }
+            });
+        });
+
+        // Toggle Modal Logic
+        function togglePartialPayment() {
+            const isPartial = document.getElementById('allow-partial').checked;
+            const amountInput = document.getElementById('monthly-amount');
+
+            if (isPartial) {
+                amountInput.readOnly = false;
+                amountInput.classList.remove('bg-slate-50', 'dark:bg-slate-900/50');
+                amountInput.classList.add('bg-white', 'dark:bg-slate-800', 'ring-2', 'ring-primary/20');
+                amountInput.focus();
+            } else {
+                amountInput.readOnly = true;
+                amountInput.classList.add('bg-slate-50', 'dark:bg-slate-900/50');
+                amountInput.classList.remove('bg-white', 'dark:bg-slate-800', 'ring-2', 'ring-primary/20');
+                updateMonthlyObligation();
+            }
+        }
+
+        // ... (Include other functions: updateMonthlyObligation, openMonthlyPaymentModal, openCollectionDetails)
+        // For brevity in this tool call, assuming main.js or the script block handles them. 
+        // I will paste the critical functions here to ensure they work.
+
+        async function updateMonthlyObligation() {
+            const memberId = document.getElementById('monthly-member-select').value;
+            const month = document.getElementById('monthly-month-select').value;
+
+            if (!memberId || !month) {
+                document.getElementById('payment-breakdown').classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/monthly-obligation/${memberId}/${month}`);
+                const data = await response.json();
+
+                document.getElementById('payment-breakdown').classList.remove('hidden');
+                document.getElementById('breakdown-contribution').textContent = '₹' + data.contributionAmount.toLocaleString('en-IN');
+
+                const loansContainer = document.getElementById('breakdown-loans');
+                loansContainer.innerHTML = '';
+
+                if (data.loans && data.loans.length > 0) {
+                    data.loans.forEach(loan => {
+                        loansContainer.innerHTML += `<div class="flex justify-between">
+                    <span class="text-slate-500">Loan #${loan.id} EMI</span>
+                    <span class="font-medium text-slate-800">₹${loan.emi.toLocaleString('en-IN')}</span>
+                </div>`;
+                    });
+                }
+
+                document.getElementById('breakdown-total').textContent = '₹' + data.totalDue.toLocaleString('en-IN');
+                if (!document.getElementById('allow-partial').checked) {
+                    document.getElementById('monthly-amount').value = data.totalDue;
+                }
+
+                if (data.alreadyPaid) alert('⚠️ Already paid for ' + month);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openMonthlyPaymentModal() {
+            document.getElementById('monthly-payment-modal').classList.remove('hidden');
+            document.getElementById('monthly-payment-form').reset();
+            document.getElementById('payment-breakdown').classList.add('hidden');
+            togglePartialPayment();
+        }
+
+        async function openCollectionDetails() {
+            const modal = document.getElementById('collection-details-modal');
+            const loading = document.getElementById('collection-details-loading');
+            const content = document.getElementById('collection-details-content');
+            const body = document.getElementById('collection-details-body');
+            const noMsg = document.getElementById('no-collections-msg');
+            const monthNameSpan = document.getElementById('collection-month-name');
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            content.classList.add('hidden');
+            body.innerHTML = '';
+            noMsg.classList.add('hidden');
+
+            try {
+                const response = await fetch('/collection-details');
+                const data = await response.json();
+
+                if (data.success) {
+                    monthNameSpan.textContent = data.currentMonth;
+
+                    if (data.collections.length === 0) {
+                        noMsg.classList.remove('hidden');
+                    } else {
+                        data.collections.forEach(c => {
+                            const row = document.createElement('tr');
+                            row.className = "hover:bg-slate-50/50 transition-colors";
+                            row.innerHTML = `
+                                <td class="py-2 px-3 text-slate-600">${c.date}</td>
+                                <td class="py-2 px-3 font-medium text-slate-800">${c.member_name || 'System'}</td>
+                                <td class="py-2 px-3"><span class="badge ${c.type === 'contribution' ? 'success' : 'info'} capitalize">${c.type}</span></td>
+                                <td class="py-2 px-3 text-right font-bold text-emerald-600">+₹${c.amount.toLocaleString('en-IN')}</td>
+                            `;
+                            body.appendChild(row);
+                        });
+                    }
+                } else {
+                    alert('Error fetching details');
+                    modal.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error fetching details');
+                modal.classList.add('hidden');
+            } finally {
+                loading.classList.add('hidden');
+                content.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>

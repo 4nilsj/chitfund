@@ -1,0 +1,158 @@
+<div class="overflow-x-auto">
+    <table class="w-full text-left">
+        <thead class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+            <tr>
+                <th data-sortable="true" data-column="id"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'id' ? sortDir : '' %>"
+                    class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    ID
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'id' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="date"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'date' ? sortDir : '' %>"
+                    class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Date
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'date' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="type"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'type' ? sortDir : '' %>"
+                    class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Type
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'type' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="person_name"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'person_name' ? sortDir : '' %>"
+                    class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Person
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'person_name' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th data-sortable="true" data-column="amount"
+                    data-sort-dir="<%= typeof sortBy !== 'undefined' && sortBy === 'amount' ? sortDir : '' %>"
+                    class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    Amount
+                    <i
+                        class="fas fa-sort<%= typeof sortBy !== 'undefined' && sortBy === 'amount' ? (sortDir === 'asc' ? '-up' : '-down') : '' %> ml-1"></i>
+                </th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Remarks / Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-700 relative">
+            <% if (transactions.length===0) { %>
+                <tr>
+                    <td colspan="6" class="py-16 px-6 text-center">
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <div
+                                class="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-2">
+                                <i class="fas fa-receipt text-4xl text-slate-400 dark:text-slate-500"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">
+                                No transactions found</h3>
+                            <p class="text-sm text-slate-500 max-w-sm mx-auto leading-relaxed">
+                                Your financial ledger is currently
+                                empty. Record a new contribution,
+                                repayment, or expense to track
+                                activity.</p>
+                            <% if (locals.user && locals.user.role !=='member' ) { %>
+                                <button
+                                    onclick="document.getElementById('addTransactionModal').classList.remove('hidden')"
+                                    class="btn-primary mt-4 shadow-lg shadow-primary/20 hover:-translate-y-0.5 transition-all">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Record Entry
+                                </button>
+                                <% } %>
+                        </div>
+                    </td>
+                </tr>
+                <% } else { %>
+                    <% transactions.forEach(function(txn) { %>
+                        <% const isNegative=['disbursement', 'expense' ].includes(txn.type); const
+                            amountClass=isNegative ? 'text-rose-600' : 'text-emerald-600' ; const amountSign=isNegative
+                            ? '-' : '+' ; let badgeClass='bg-slate-100 text-slate-600' ; if (txn.type==='contribution' )
+                            badgeClass='bg-emerald-100 text-emerald-700' ; if (txn.type==='disbursement' )
+                            badgeClass='bg-rose-100 text-rose-700' ; if (txn.type==='repayment' )
+                            badgeClass='bg-sky-100 text-sky-700' ; if (txn.type==='expense' )
+                            badgeClass='bg-amber-100 text-amber-700' ; if (txn.type==='penalty' )
+                            badgeClass='bg-red-100 text-red-700' ; %>
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                                <td class="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 font-mono">
+                                    #<%= txn.id %>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                    <%= txn.date %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider <%= badgeClass %>">
+                                        <%= txn.type %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-200">
+                                    <%= txn.person_name || '-' %>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-bold text-right <%= amountClass %>">
+                                    <%= amountSign %>
+                                        <%= formatCurrency(txn.amount) %>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[150px]"
+                                            title="<%= txn.remarks %>">
+                                            <%= txn.remarks || '-' %>
+                                        </span>
+                                        <div
+                                            class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <% if(txn.receipt_path) { %>
+                                                <a href="/<%= txn.receipt_path %>" target="_blank"
+                                                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-sky-600"
+                                                    title="View Receipt">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                                <% } %>
+                                                    <a href="/transactions/<%= txn.id %>/receipt"
+                                                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                                                        title="Download PDF">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                    </a>
+                                                    <% if(locals.user && (locals.user.role==='admin' ||
+                                                        locals.user.userType==='admin' )) { %>
+                                                        <button type="button"
+                                                            class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-rose-50 text-rose-400 hover:text-rose-600"
+                                                            onclick="openDeleteModal('<%= txn.id %>')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                        <% } %>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }); %>
+                                <% } %>
+        </tbody>
+    </table>
+</div>
+
+<% if(typeof pagination !=='undefined' && pagination.totalPages> 1) { %>
+    <div class="pagination border-t border-slate-100 dark:border-slate-700 p-4">
+        <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %>"
+            class="pagination-item <%= pagination.currentPage <= 1 ? 'disabled' : '' %>">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+
+        <% for(let i=1; i <=pagination.totalPages; i++) { %>
+            <a href="<%= pagination.baseUrl %>?page=<%= i %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %>"
+                class="pagination-item <%= pagination.currentPage === i ? 'active' : '' %>">
+                <%= i %>
+            </a>
+            <% } %>
+
+                <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %><%= typeof sortBy !== 'undefined' ? '&sortBy=' + sortBy : '' %><%= typeof sortDir !== 'undefined' ? '&sortDir=' + sortDir : '' %><%= typeof search !== 'undefined' ? '&search=' + search : '' %>"
+                    class="pagination-item <%= pagination.currentPage >= pagination.totalPages ? 'disabled' : '' %>">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+    </div>
+    <% } %>

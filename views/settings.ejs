@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>System Architecture & Settings | <%= fundName %>
+        </title>
+</head>
+
+<body class="bg-background dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <main class="main-content md:ml-64 relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-8 py-6 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800 shadow-sm">
+                    <div>
+                        <h1
+                            class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
+                            <i class="fas fa-sliders-h text-primary"></i> Control Center
+                        </h1>
+                        <p
+                            class="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-1 italic">
+                            Configure
+                            core parameters and security protocols</p>
+                    </div>
+                    <div
+                        class="flex items-center gap-4 bg-white/50 dark:bg-slate-800/50 px-4 py-2 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-sm">
+                        <i class="fas fa-clock text-slate-400 dark:text-slate-500"></i>
+                        <span
+                            class="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest leading-none">System
+                            Time: <%= new Date().toLocaleDateString() %></span>
+                    </div>
+                </div>
+
+                <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+                    <% if(locals.msg) { %>
+                        <div
+                            class="alert <%= locals.type || 'success' %> animate-slide-up rounded-2xl border-2 shadow-lg px-8 py-5 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <i
+                                    class="fas <%= (locals.type==='danger') ? 'fa-exclamation-triangle' : 'fa-check-circle' %> text-xl"></i>
+                                <span class="font-black text-sm uppercase tracking-widest">
+                                    <%= msg %>
+                                </span>
+                            </div>
+                        </div>
+                        <% } %>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <!-- Global Configuration Card -->
+                                <div
+                                    class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+                                    <div
+                                        class="px-10 py-8 border-b border-slate-50 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/50 flex items-center justify-between">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="w-12 h-12 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center text-xl shadow-inner">
+                                                <i class="fas fa-microchip"></i>
+                                            </div>
+                                            <div>
+                                                <h2
+                                                    class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                                    Core
+                                                    Infrastructure</h2>
+                                                <p
+                                                    class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">
+                                                    Global Fund Parameters</p>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="bg-white dark:bg-slate-700 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600 text-[8px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-widest shadow-sm">v1.2.4</span>
+                                    </div>
+                                    <div class="p-10 space-y-10 flex-1">
+                                        <% if(user && user.role==='admin' ) { %>
+                                            <!-- Fund Name -->
+                                            <form action="/settings/update-fund-name" method="POST" class="space-y-4">
+                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <label
+                                                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Platform
+                                                    Branding</label>
+                                                <div class="flex gap-4">
+                                                    <div class="relative flex-1 group">
+                                                        <i
+                                                            class="fas fa-signature absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-sky-500 transition-colors"></i>
+                                                        <input type="text" name="fund_name" value="<%= fundName %>"
+                                                            required
+                                                            class="w-full pl-14 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-sky-500/10 focus:border-sky-500 outline-none transition-all font-black text-slate-900 dark:text-white">
+                                                    </div>
+                                                    <button type="submit"
+                                                        class="btn-primary bg-sky-600 hover:bg-sky-700 border-none shrink-0 px-8 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-sky-200">Rename</button>
+                                                </div>
+                                            </form>
+
+                                            <!-- Opening Balance -->
+                                            <form action="/settings/opening-balance" method="POST"
+                                                class="space-y-4 pt-10 border-t border-slate-50 dark:border-slate-700">
+                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <label
+                                                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Liquidity
+                                                    Foundation (₹)</label>
+                                                <div class="flex gap-4">
+                                                    <div class="relative flex-1 group">
+                                                        <span
+                                                            class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-300 dark:text-slate-600 group-focus-within:text-emerald-500 transition-colors text-xl">₹</span>
+                                                        <input type="number" name="amount" value="<%= openingBalance %>"
+                                                            required min="0" step="1"
+                                                            class="w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-black text-2xl text-slate-900 dark:text-white tracking-tight">
+                                                    </div>
+                                                    <button type="submit"
+                                                        class="btn-primary bg-emerald-600 hover:bg-emerald-700 border-none shrink-0 px-8 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-emerald-200">
+                                                        <%= isOpeningBalanceSet ? 'Adjust' : 'Set Cap' %>
+                                                    </button>
+                                                </div>
+                                                <p
+                                                    class="text-[9px] text-slate-400 dark:text-slate-500 flex items-center gap-2 ml-1 italic font-medium">
+                                                    <i class="fas fa-info-circle text-primary"></i> This sets the
+                                                    absolute starting balance for all financial aggregates.
+                                                </p>
+                                            </form>
+
+                                            <!-- Default Contribution -->
+                                            <form action="/settings/contribution/default" method="POST"
+                                                class="space-y-4 pt-10 border-t border-slate-50 dark:border-slate-700">
+                                                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                <label
+                                                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Primary
+                                                    Monthly Unit (₹)</label>
+                                                <div
+                                                    class="bg-primary/5 p-6 rounded-[2rem] border-2 border-primary/10 flex items-center gap-6">
+                                                    <div class="relative flex-1 group">
+                                                        <span
+                                                            class="absolute left-0 top-1/2 -translate-y-1/2 font-black text-primary/30 group-focus-within:text-primary transition-colors text-3xl">₹</span>
+                                                        <input type="number" name="amount"
+                                                            value="<%= defaultContribution %>" required min="1"
+                                                            class="w-full pl-8 pr-4 py-2 bg-transparent border-none focus:ring-0 outline-none transition-all font-black text-5xl text-primary tracking-tighter shadow-none">
+                                                    </div>
+                                                    <button type="submit"
+                                                        class="btn-primary shrink-0 h-16 w-16 !p-0 rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 active:scale-95">
+                                                        <i class="fas fa-save text-xl"></i>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                            <% } %>
+                                    </div>
+                                </div>
+
+                                <!-- Security Settings Card -->
+                                <div
+                                    class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+                                    <div
+                                        class="px-10 py-8 border-b border-slate-50 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/50 flex items-center gap-4">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-xl shadow-inner">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        <div>
+                                            <h2
+                                                class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                                Security
+                                                Protocol</h2>
+                                            <p
+                                                class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">
+                                                Account Isolation & Access</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-10 space-y-10 flex-1">
+                                        <form action="/users/change-password" method="POST" class="space-y-6">
+                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                            <div class="space-y-3">
+                                                <label
+                                                    class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Authentic
+                                                    Signature (Current)</label>
+                                                <div class="relative group">
+                                                    <i
+                                                        class="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-rose-500 transition-colors"></i>
+                                                    <input type="password" name="current_password" required
+                                                        placeholder="••••••••"
+                                                        class="w-full pl-14 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500 outline-none transition-all font-mono dark:text-white">
+                                                </div>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <div class="space-y-3">
+                                                    <label
+                                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">New
+                                                        Pattern</label>
+                                                    <div class="relative group">
+                                                        <i
+                                                            class="fas fa-key absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors"></i>
+                                                        <input type="password" name="new_password" required
+                                                            placeholder="••••••••"
+                                                            class="w-full pl-14 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-mono dark:text-white">
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <label
+                                                        class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Verify
+                                                        Pattern</label>
+                                                    <div class="relative group">
+                                                        <i
+                                                            class="fas fa-sync absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors"></i>
+                                                        <input type="password" name="confirm_password" required
+                                                            placeholder="••••••••"
+                                                            class="w-full pl-14 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all font-mono dark:text-white">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="pt-6">
+                                                <button type="submit"
+                                                    class="btn-primary w-full py-5 bg-slate-900 border-none hover:bg-black font-black uppercase tracking-[0.2em] text-[10px] shadow-2xl shadow-slate-200 transition-all flex items-center justify-center gap-3">
+                                                    <i class="fas fa-fingerprint text-sm md:text-base"></i> Rotate
+                                                    Access Keys
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                        <div class="pt-10 border-t border-slate-50 dark:border-slate-700">
+                                            <div
+                                                class="p-8 rounded-[2rem] bg-amber-50/50 dark:bg-amber-900/10 border-2 border-amber-100/50 dark:border-amber-800/30 flex items-start gap-6">
+                                                <div
+                                                    class="w-12 h-12 rounded-2xl bg-white dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800/50 flex items-center justify-center shrink-0 text-amber-500 text-xl shadow-sm">
+                                                    <i class="fas fa-lightbulb"></i>
+                                                </div>
+                                                <div>
+                                                    <h4
+                                                        class="text-sm font-black text-amber-800 dark:text-amber-500 uppercase tracking-widest mb-2">
+                                                        Security Tip</h4>
+                                                    <p
+                                                        class="text-xs text-amber-600/80 dark:text-amber-400/80 leading-relaxed font-medium">
+                                                        Use
+                                                        a unique alphanumeric pattern to ensure fund integrity.
+                                                        Multi-factor authentication is recommended for high-liquidity
+                                                        accounts.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Monthly Overrides Card -->
+                                <div
+                                    class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+                                    <div
+                                        class="px-10 py-8 border-b border-slate-50 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/50 flex items-center gap-4">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center text-xl shadow-inner">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div>
+                                            <h2
+                                                class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                                Cycle
+                                                Variations</h2>
+                                            <p
+                                                class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">
+                                                Exceptions & Monthly Modifiers</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-10 space-y-10 flex-1">
+                                        <form action="/settings/contribution/override" method="POST"
+                                            class="bg-slate-50/50 dark:bg-slate-900/30 p-8 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 shadow-inner">
+                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                            <h3
+                                                class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+                                                <i class="fas fa-plus-circle text-primary"></i> Deploy Override Rule
+                                            </h3>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 items-end">
+                                                <div class="space-y-3">
+                                                    <label
+                                                        class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Target
+                                                        Period</label>
+                                                    <div class="relative group">
+                                                        <i
+                                                            class="fas fa-calendar-alt absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors"></i>
+                                                        <input type="month" name="month" required
+                                                            class="w-full pl-14 pr-4 py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-black dark:text-white">
+                                                    </div>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <label
+                                                        class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Custom
+                                                        Unit (₹)</label>
+                                                    <div class="relative group">
+                                                        <span
+                                                            class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-300 group-focus-within:text-primary transition-colors">₹</span>
+                                                        <input type="number" name="amount" required min="1"
+                                                            placeholder="2000"
+                                                            class="w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all text-sm font-black tracking-tight dark:text-white">
+                                                    </div>
+                                                </div>
+                                                <div class="sm:col-span-2">
+                                                    <button type="submit"
+                                                        class="btn-primary w-full py-4 font-black uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-primary/20">Apply
+                                                        Modification</button>
+                                                </div>
+                                            </div>
+                                        </form>
+
+                                        <div
+                                            class="rounded-3xl border border-slate-100 dark:border-slate-700 overflow-hidden shadow-sm">
+                                            <table class="w-full text-left">
+                                                <thead>
+                                                    <tr class="bg-slate-50 dark:bg-slate-800/80">
+                                                        <th
+                                                            class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                            Active Period</th>
+                                                        <th
+                                                            class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">
+                                                            Modified Unit</th>
+                                                        <th
+                                                            class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">
+                                                            Operation</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                                                    <% if (overrides && overrides.length> 0) { %>
+                                                        <% overrides.forEach(o=> { %>
+                                                            <tr
+                                                                class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group">
+                                                                <td
+                                                                    class="px-8 py-5 text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                                                                    <%= new Date(o.month + '-01'
+                                                                        ).toLocaleDateString('en-US', { month: 'long' ,
+                                                                        year: 'numeric' }) %>
+                                                                </td>
+                                                                <td class="px-8 py-5 text-right">
+                                                                    <span
+                                                                        class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
+                                                                        ₹<%= o.amount.toLocaleString('en-IN') %>
+                                                                    </span>
+                                                                </td>
+                                                                <td class="px-8 py-5 text-center">
+                                                                    <form action="/settings/contribution/delete"
+                                                                        method="POST" class="inline">
+                                                                        <input type="hidden" name="_csrf"
+                                                                            value="<%= csrfToken %>">
+                                                                        <input type="hidden" name="month"
+                                                                            value="<%= o.month %>">
+                                                                        <button type="submit"
+                                                                            class="w-10 h-10 rounded-xl hover:bg-rose-50 text-slate-300 hover:text-rose-500 transition-all active:scale-95"
+                                                                            onclick="return confirm('Revoke override for <%= o.month %>?')">
+                                                                            <i class="fas fa-trash-alt text-sm"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                            <% }); %>
+                                                                <% } else { %>
+                                                                    <tr>
+                                                                        <td colspan="3"
+                                                                            class="px-8 py-12 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">
+                                                                            No active overrides registered</td>
+                                                                    </tr>
+                                                                    <% } %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Maintenance & Danger Zone -->
+                                <div
+                                    class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col">
+                                    <div
+                                        class="px-10 py-8 border-b border-slate-50 dark:border-slate-700 bg-slate-50/30 dark:bg-slate-800/50 flex items-center gap-4">
+                                        <div
+                                            class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center text-xl shadow-inner">
+                                            <i class="fas fa-database"></i>
+                                        </div>
+                                        <div>
+                                            <h2
+                                                class="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                                System
+                                                Reliability</h2>
+                                            <p
+                                                class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">
+                                                Persistence & Cleanup Operations</p>
+                                        </div>
+                                    </div>
+                                    <div class="p-10 space-y-10 flex-1">
+                                        <div
+                                            class="bg-emerald-50/50 dark:bg-emerald-900/10 p-8 rounded-[2rem] border-2 border-emerald-100/50 dark:border-emerald-800/30 flex flex-col sm:flex-row items-center gap-8 group">
+                                            <div
+                                                class="w-20 h-20 rounded-3xl bg-white dark:bg-emerald-900/30 border-2 border-emerald-100 dark:border-emerald-800/50 flex items-center justify-center text-3xl text-emerald-500 shadow-xl group-hover:scale-110 transition-transform">
+                                                <i class="fas fa-cloud-download-alt"></i>
+                                            </div>
+                                            <div class="flex-1 text-center sm:text-left">
+                                                <h3
+                                                    class="text-sm font-black text-emerald-800 dark:text-emerald-500 uppercase tracking-widest mb-2">
+                                                    Immutable Snapshot</h3>
+                                                <p
+                                                    class="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 leading-relaxed font-medium mb-6">
+                                                    Create a high-integrity SQLite binary backup of the entire system
+                                                    state.</p>
+                                                <a href="/settings/backup"
+                                                    class="btn-primary bg-emerald-600 hover:bg-emerald-700 border-none inline-flex items-center justify-center gap-3 px-10 py-4 shadow-xl shadow-emerald-200">
+                                                    <span
+                                                        class="font-black uppercase tracking-widest text-[10px]">Download
+                                                        Ledger</span>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <% if(user && user.role==='admin' ) { %>
+                                            <div class="pt-10 border-t border-slate-50 dark:border-slate-700">
+                                                <div
+                                                    class="p-10 rounded-[2.5rem] bg-rose-50/50 dark:bg-rose-900/10 border-2 border-rose-100 dark:border-rose-900/50 border-dashed relative overflow-hidden group">
+                                                    <div class="relative z-10 flex flex-col items-center text-center">
+                                                        <div
+                                                            class="w-16 h-16 rounded-2xl bg-white dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800/50 flex items-center justify-center text-rose-500 text-2xl shadow-sm mb-6 animate-pulse">
+                                                            <i class="fas fa-radiation"></i>
+                                                        </div>
+                                                        <h3
+                                                            class="text-lg font-black text-rose-900 dark:text-rose-500 uppercase tracking-tighter mb-2">
+                                                            Final Protocol: Reset</h3>
+                                                        <p
+                                                            class="text-xs text-rose-600/80 dark:text-rose-400/80 leading-relaxed font-medium max-w-sm mb-8">
+                                                            This will <strong
+                                                                class="text-rose-700 dark:text-rose-400 uppercase">purge
+                                                                all
+                                                                data</strong> including transaction history, members,
+                                                            and loans. This procedure is absolute and non-reversible.
+                                                        </p>
+                                                        <form id="reset-form" action="/admin/reset" method="POST"
+                                                            class="w-full">
+                                                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                                            <button type="button"
+                                                                class="w-full py-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-500 font-black text-[10px] uppercase tracking-[0.3em] hover:bg-rose-600 hover:text-white dark:hover:text-white hover:border-rose-600 dark:hover:border-rose-600 transition-all shadow-xl shadow-rose-200/50 dark:shadow-none"
+                                                                onclick="document.getElementById('reset-modal').classList.remove('hidden')">
+                                                                Initialize Factory Purge
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                </div>
+            </main>
+    </div>
+
+    <!-- Reset Data Confirmation Modal -->
+    <div id="reset-modal" class="fixed inset-0 z-[100] hidden">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-xl transition-opacity"
+            onclick="document.getElementById('reset-modal').classList.add('hidden')"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md p-4">
+            <div
+                class="bg-white dark:bg-slate-900 rounded-[3rem] shadow-[0_32px_128px_-16px_rgba(244,63,94,0.3)] dark:shadow-[0_32px_128px_-16px_rgba(244,63,94,0.1)] border border-rose-100 dark:border-rose-900/50 overflow-hidden transform transition-all animate-slide-up">
+                <div
+                    class="bg-gradient-to-br from-rose-600 via-rose-500 to-rose-700 px-10 py-12 text-center text-white relative">
+                    <div
+                        class="w-24 h-24 bg-white/10 backdrop-blur-md rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-white/20">
+                        <i class="fas fa-trash-alt text-4xl"></i>
+                    </div>
+                    <h3 class="text-3xl font-black uppercase tracking-tighter leading-none">Confirm Purge?</h3>
+                    <p class="text-rose-100 text-[9px] mt-4 uppercase tracking-[0.3em] font-black opacity-80">
+                        System-Wide Data Destruction</p>
+                </div>
+
+                <div class="p-10 text-center space-y-8">
+                    <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed font-medium">
+                        Are you sure you want to initialize the factory reset? This will <strong
+                            class="text-rose-600 dark:text-rose-500 uppercase">obliterate</strong> all member data, loan
+                        history, and
+                        credit records.
+                    </p>
+
+                    <div class="flex flex-col gap-4">
+                        <button type="button"
+                            class="w-full py-5 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-2xl shadow-rose-200 transition-all transform hover:-translate-y-1 active:scale-95"
+                            onclick="document.getElementById('reset-form').submit()">
+                            Confirm System Wipe
+                        </button>
+                        <button type="button"
+                            class="w-full py-4 text-slate-400 font-black uppercase tracking-widest text-[9px] group"
+                            onclick="document.getElementById('reset-modal').classList.add('hidden')">
+                            <span
+                                class="border-b-2 border-transparent group-hover:border-slate-200 transition-all pb-1 italic px-4">Relinquish
+                                Action</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+</body>
+
+</html>

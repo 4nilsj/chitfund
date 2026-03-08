@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>
+            <%= message %> | <%= locals.fundName || 'Chit Fund' %>
+        </title>
+</head>
+
+<body class="bg-slate-50/50 min-h-screen">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <% if (locals.user) { %>
+            <%- include('partials/sidebar', {user: locals.user, activePage: 'error' , fundName: locals.fundName
+                || 'Chit Fund' }) %>
+                <% } %>
+
+                    <main
+                        class="main-content <%= locals.user ? 'md:ml-64' : 'w-full' %> min-h-screen flex items-center justify-center p-8">
+                        <div class="max-w-xl w-full text-center space-y-8 animate-slide-up">
+                            <!-- Icon Aura -->
+                            <div class="relative inline-block">
+                                <div
+                                    class="absolute inset-0 bg-primary/20 rounded-full blur-3xl opacity-50 scale-150 animate-pulse">
+                                </div>
+                                <div
+                                    class="relative w-32 h-32 mx-auto rounded-[2.5rem] bg-white shadow-2xl flex items-center justify-center text-primary border border-slate-100">
+                                    <% if (statusCode===404) { %>
+                                        <i class="fas fa-map-marked-alt text-5xl"></i>
+                                        <% } else if (statusCode>= 500) { %>
+                                            <i class="fas fa-microchip text-5xl"></i>
+                                            <% } else { %>
+                                                <i class="fas fa-shield-virus text-5xl text-rose-500"></i>
+                                                <% } %>
+                                </div>
+                            </div>
+
+                            <!-- Text Content -->
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-center gap-4">
+                                    <span class="h-px w-10 bg-slate-200"></span>
+                                    <h1 class="text-6xl font-black text-slate-900 tracking-tighter">
+                                        <%= statusCode %>
+                                    </h1>
+                                    <span class="h-px w-10 bg-slate-200"></span>
+                                </div>
+                                <h2 class="text-2xl font-bold text-slate-800 tracking-tight">
+                                    <%= message %>
+                                </h2>
+                                <p class="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
+                                    <%= locals.description
+                                        || "We've encountered an unexpected detour. Let's get you back on track." %>
+                                </p>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="pt-6">
+                                <a href="/"
+                                    class="btn-primary py-4 px-10 rounded-2xl shadow-xl shadow-primary/30 inline-flex items-center gap-3 group active:scale-95 transition-all">
+                                    <i
+                                        class="fas fa-th-large text-xs group-hover:rotate-90 transition-transform duration-500"></i>
+                                    <span class="font-black uppercase tracking-[0.2em] text-[10px]">Back to Control
+                                        Panel</span>
+                                </a>
+                            </div>
+
+                            <!-- Error Metadata (Dev only or muted) -->
+                            <% if (typeof error !=='undefined' && error) { %>
+                                <div class="mt-12 text-left opacity-30 hover:opacity-100 transition-opacity">
+                                    <div class="bg-slate-900 rounded-3xl p-6 overflow-hidden">
+                                        <h4 class="text-[9px] font-black text-primary uppercase tracking-widest mb-3">
+                                            Debug Diagnostics</h4>
+                                        <pre
+                                            class="text-[10px] font-mono text-slate-300 overflow-x-auto"><code><%= error.stack || JSON.stringify(error, null, 2) %></code></pre>
+                                    </div>
+                                </div>
+                                <% } %>
+                        </div>
+                    </main>
+    </div>
+</body>
+
+</html>

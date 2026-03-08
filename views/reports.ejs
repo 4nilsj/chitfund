@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Reports - Chit Fund</title>
+</head>
+
+<body
+    class="bg-background dark:bg-slate-900 font-sans antialiased text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="main-content relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden md:ml-64 p-8">
+                <header class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Financial Reports</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-1">Overall fund health and member status</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div id="current-date" class="text-slate-500 dark:text-slate-400 font-medium">
+                            <%= new Date().toLocaleDateString() %>
+                        </div>
+                        <button class="btn-secondary" onclick="window.print()">
+                            <i class="fas fa-print"></i> Print
+                        </button>
+                    </div>
+                </header>
+
+                <div class="space-y-8">
+                    <!-- Export Section -->
+                    <div class="card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6">
+                        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                            <i class="fas fa-file-export text-primary"></i> Export Data
+                        </h3>
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="flex gap-3">
+                                <a href="/reports/export/overall" class="btn-secondary flex items-center gap-2 h-10">
+                                    <i class="fas fa-file-excel text-emerald-600"></i> Overall Summary
+                                </a>
+                                <a href="/reports/export/members" class="btn-secondary flex items-center gap-2 h-10">
+                                    <i class="fas fa-users text-sky-600"></i> Members List
+                                </a>
+                                <a href="/reports/export/loans" class="btn-secondary flex items-center gap-2 h-10">
+                                    <i class="fas fa-hand-holding-usd text-amber-600"></i> Loans List
+                                </a>
+                            </div>
+
+                            <div class="h-8 w-px bg-slate-200 dark:bg-slate-600"></div>
+
+                            <!-- Monthly Report Form -->
+                            <div
+                                class="flex items-center gap-3 bg-slate-50/80 dark:bg-slate-900/50 backdrop-blur-sm p-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-inner group">
+                                <div class="flex flex-col px-2 hidden sm:block">
+                                    <span
+                                        class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Select
+                                        Period</span>
+                                </div>
+                                <div class="h-6 w-px bg-slate-200 dark:bg-slate-600 hidden sm:block"></div>
+                                <div
+                                    class="relative flex items-center group/input bg-white dark:bg-slate-800 rounded-lg shadow-sm w-full md:w-auto overflow-hidden">
+                                    <i
+                                        class="fas fa-calendar-check absolute left-3 text-slate-400 group-focus-within/input:text-primary transition-colors text-sm"></i>
+                                    <input type="month" id="report_month"
+                                        class="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 dark:text-slate-200 pl-10 pr-4 py-2 outline-none uppercase tracking-tight cursor-pointer w-full"
+                                        value="<%= new Date().toISOString().slice(0, 7) %>">
+                                </div>
+                                <button
+                                    class="btn-primary h-10 px-6 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all"
+                                    onclick="downloadMonthlyReport()">
+                                    <i class="fas fa-file-download mr-2 text-xs"></i> Fetch
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        function downloadMonthlyReport() {
+                            const month = document.getElementById('report_month').value;
+                            if (!month) return alert('Please select a month');
+                            window.location.href = `/reports/export/monthly?month=${month}`;
+                        }
+                    </script>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Fund Summary Card -->
+                        <div
+                            class="card bg-white dark:bg-slate-800 p-6 lg:col-span-2 border border-slate-200 dark:border-slate-700">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6">Fund Summary</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div
+                                    class="bg-primary/5 dark:bg-primary/10 p-6 rounded-2xl border border-primary/10 dark:border-primary/20">
+                                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total Fund
+                                        Balance</p>
+                                    <div class="text-3xl font-bold text-primary dark:text-primary-light">
+                                        <%= stats.fundBalance %>
+                                    </div>
+                                    <div
+                                        class="mt-4 pt-4 border-t border-primary/10 dark:border-primary/20 flex justify-between items-center">
+                                        <span class="text-sm text-slate-500 dark:text-slate-400">Net Profit
+                                            (Approx)</span>
+                                        <span class="font-bold text-emerald-600">
+                                            <%= stats.netProfit %>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Total Collected</span>
+                                        <span class="font-bold text-emerald-600">
+                                            <%= stats.totalCollected %>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Total Disbursed (Loans)</span>
+                                        <span class="font-bold text-rose-600">
+                                            <%= stats.totalDisbursed %>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Total Expenses</span>
+                                        <span class="font-bold text-amber-600">
+                                            <%= stats.totalExpenses %>
+                                        </span>
+                                    </div>
+                                    <div class="h-px bg-slate-100 dark:bg-slate-700 my-2"></div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Total Loans Issued</span>
+                                        <span class="font-bold text-slate-900 dark:text-white">
+                                            <%= stats.totalLoansIssued %>
+                                        </span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-sm">
+                                        <span class="text-slate-500 dark:text-slate-400">Currently Outstanding</span>
+                                        <span class="font-bold text-amber-600">
+                                            <%= stats.totalOutstanding %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Membership Card -->
+                        <div class="card bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-6">Membership Status</h3>
+                            <div class="flex flex-col items-center justify-center py-4">
+                                <div
+                                    class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl mb-4">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div class="text-4xl font-bold text-slate-900 dark:text-white mb-1">
+                                    <%= stats.activeMembers %>
+                                </div>
+                                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Active Members</p>
+
+                                <div
+                                    class="mt-8 w-full pt-6 border-t border-slate-100 dark:border-slate-700 text-center">
+                                    <p class="text-xs text-slate-400 dark:text-slate-500">
+                                        Excluding <%= locals.inactiveMembersCount || 0 %> inactive members.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Defaulters Table -->
+                    <div class="card bg-white overflow-hidden">
+                        <div class="p-6 border-b border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Loan Defaulters / Overdue</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            Borrower</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            Loan ID</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            Outstanding</th>
+                                        <th
+                                            class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+                                    <% if(defaulters.length===0) { %>
+                                        <tr>
+                                            <td colspan="4" class="py-12 px-6 text-center">
+                                                <div class="flex flex-col items-center justify-center space-y-3">
+                                                    <div
+                                                        class="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-2">
+                                                        <i
+                                                            class="fas fa-shield-check text-2xl text-emerald-500 dark:text-emerald-400"></i>
+                                                    </div>
+                                                    <h3 class="text-base font-bold text-slate-800 dark:text-white">All
+                                                        Clear</h3>
+                                                    <p class="text-sm text-slate-500 max-w-sm mx-auto">There are no
+                                                        overdue loans or defaulters at this time. Fund health is
+                                                        pristine.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <% } else { %>
+                                            <% defaulters.forEach(l=> { %>
+                                                <tr
+                                                    class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                                    <td
+                                                        class="px-6 py-4 font-medium text-slate-900 dark:text-slate-200">
+                                                        <%= l.borrower_name %>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-slate-500 dark:text-slate-400">#<%= l.id
+                                                            %>
+                                                    </td>
+                                                    <td class="px-6 py-4 font-bold text-rose-600 dark:text-rose-400">
+                                                        <%= formatCurrency(l.outstanding) %>
+                                                    </td>
+                                                    <td class="px-6 py-4">
+                                                        <span
+                                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-400">
+                                                            Overdue
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+    </div>
+    </main>
+    </div>
+</body>
+
+</html>

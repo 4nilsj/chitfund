@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Passbook - <%= member.name %> | <%= fundName %>
+        </title>
+</head>
+
+<body class="bg-slate-50/50">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+            <main class="main-content md:ml-64 relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+                <!-- Glass Header -->
+                <div
+                    class="sticky top-0 z-30 flex items-center justify-between px-8 py-6 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+                    <div class="flex items-center gap-6">
+                        <a href="/members/<%= member.id %>"
+                            class="w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-2xl font-black text-slate-900 tracking-tight">
+                                Passbook: <%= member.name %>
+                            </h1>
+                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1 italic">
+                                Chronological Ledger Export</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="/reports/export/member/<%= member.id %>"
+                            class="btn-secondary h-11 px-6 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-sm">
+                            <i class="fas fa-file-excel text-emerald-500"></i> <span class="hidden sm:inline">Export
+                                Ledger</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+                    <!-- Summary Card -->
+                    <div
+                        class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-8 flex items-center gap-6 relative overflow-hidden group">
+                        <div
+                            class="absolute -right-12 -bottom-12 opacity-[0.03] group-hover:scale-110 transition-transform duration-1000">
+                            <i class="fas fa-book-open text-[12rem] text-primary"></i>
+                        </div>
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-3xl">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Running
+                                Balance</h3>
+                            <div class="text-4xl font-black text-slate-900 tracking-tighter">
+                                <%= formatCurrency(runningBalance) %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger Table -->
+                    <div
+                        class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                        <div
+                            class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-slate-800">Transaction History</h2>
+                            <span
+                                class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">Entry
+                                Log</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50/50">
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Date</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Type</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">
+                                            Amount</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">
+                                            Running Balance</th>
+                                        <th
+                                            class="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                            Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-50">
+                                    <% transactions.forEach(function(txn) { %>
+                                        <% const isOut=['disbursement', 'expense' , 'loan' ].includes(txn.type); %>
+                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                <td class="px-8 py-4 text-sm font-medium text-slate-600">
+                                                    <%= txn.date %>
+                                                </td>
+                                                <td class="px-8 py-4">
+                                                    <span class="badge <%= txn.type %> text-[9px] px-2.5 py-0.5">
+                                                        <%= txn.type %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-8 py-4 text-right">
+                                                    <span
+                                                        class="text-sm font-black <%= isOut ? 'text-rose-600' : 'text-emerald-600' %>">
+                                                        <%= isOut ? '-' : '+' %>
+                                                            <%= formatCurrency(txn.amount) %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-8 py-4 text-right">
+                                                    <span class="text-sm font-black text-slate-900">
+                                                        <%= formatCurrency(txn.balanceAfter) %>
+                                                    </span>
+                                                </td>
+                                                <td class="px-8 py-4 text-xs text-slate-500 font-medium">
+                                                    <%= txn.remarks %>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <% if(pagination.totalPages> 1) { %>
+                        <div class="flex justify-center items-center gap-2 py-8">
+                            <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %>"
+                                class="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary transition-all <%= pagination.currentPage <= 1 ? 'pointer-events-none opacity-50' : '' %>">
+                                <i class="fas fa-chevron-left text-xs"></i>
+                            </a>
+
+                            <div
+                                class="flex items-center gap-2 bg-white px-2 py-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                                <% for(let i=1; i <=pagination.totalPages; i++) { %>
+                                    <a href="<%= pagination.baseUrl %>?page=<%= i %>"
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all <%= pagination.currentPage === i ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600' %>">
+                                        <%= i %>
+                                    </a>
+                                    <% } %>
+                            </div>
+
+                            <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %>"
+                                class="w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary transition-all <%= pagination.currentPage >= pagination.totalPages ? 'pointer-events-none opacity-50' : '' %>">
+                                <i class="fas fa-chevron-right text-xs"></i>
+                            </a>
+                        </div>
+                        <% } %>
+                </div>
+            </main>
+    </div>
+</body>
+
+</html>

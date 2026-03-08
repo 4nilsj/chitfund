@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+        <title>Loan #<%= loan.id %> - Details</title>
+</head>
+
+<body
+    class="bg-background dark:bg-slate-900 font-sans antialiased text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <%- include('partials/sidebar') %>
+
+            <main class="main-content md:ml-64 p-8">
+                <header class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+                    <div class="flex items-center gap-6">
+                        <a href="/loans"
+                            class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Loan #<%= loan.id %>
+                                </h1>
+                                <span
+                                    class="badge <%= loan.status %> text-[10px] px-3 py-1 font-black uppercase tracking-widest">
+                                    <%= loan.status %>
+                                </span>
+                            </div>
+                            <p class="text-slate-500 mt-1 font-medium italic">Active financial commitment for <%=
+                                    loan.member_name %>
+                            </p>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                    <!-- Left Column: Details -->
+                    <div class="space-y-8">
+                        <div
+                            class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-slate-900 to-slate-800 px-8 py-6 text-white">
+                                <h2 class="text-lg font-bold flex items-center gap-3">
+                                    <i class="fas fa-info-circle text-primary"></i> Core Parameters
+                                </h2>
+                            </div>
+                            <div class="p-8 space-y-5">
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50 group">
+                                    <span
+                                        class="text-sm font-bold text-slate-400 uppercase tracking-widest">Borrower</span>
+                                    <a href="/members/<%= loan.member_id %>"
+                                        class="text-sm font-black text-primary hover:underline">
+                                        <%= loan.member_name %>
+                                    </a>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                    <span
+                                        class="text-sm font-bold text-slate-400 uppercase tracking-widest">Principal</span>
+                                    <span class="text-lg font-black text-slate-900">
+                                        <%= formatCurrency(loan.amount) %>
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Int.
+                                        Rate</span>
+                                    <span class="text-sm font-black text-slate-700">
+                                        <%= loan.interest_rate %>% <span
+                                                class="text-[10px] text-slate-400 font-medium">/ mo</span>
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Term</span>
+                                    <span class="text-sm font-black text-slate-700">
+                                        <%= loan.tenure %> Months
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                    <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Month
+                                        EMI</span>
+                                    <span class="text-lg font-black text-primary">
+                                        <%= formatCurrency(loan.emi) %>
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                    <span
+                                        class="text-sm font-bold text-slate-400 uppercase tracking-widest">Commenced</span>
+                                    <span class="text-sm font-black text-slate-700">
+                                        <%= new Date(loan.start_date).toLocaleDateString() %>
+                                    </span>
+                                </div>
+                                <% if (loan.interest_waived> 0) { %>
+                                    <div class="flex justify-between items-center py-3 border-b border-slate-50">
+                                        <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Int.
+                                            Waived</span>
+                                        <span class="text-lg font-black text-sky-500">
+                                            <%= formatCurrency(loan.interest_waived) %>
+                                        </span>
+                                    </div>
+                                    <% } %>
+                                        <div class="pt-6 mt-2">
+                                            <div
+                                                class="bg-rose-50 rounded-2xl p-6 border-2 border-rose-100 border-dashed text-center">
+                                                <span
+                                                    class="text-[10px] font-black text-rose-400 uppercase tracking-[0.2em] mb-1 block">Net
+                                                    Outstanding</span>
+                                                <div class="text-3xl font-black text-rose-600">
+                                                    <%= formatCurrency(loan.outstanding) %>
+                                                </div>
+                                            </div>
+                                        </div>
+                            </div>
+                        </div>
+
+                        <% if(loan.status==='active' ) { %>
+                            <div class="bg-primary/5 rounded-3xl p-8 border border-primary/20 shadow-inner">
+                                <h3
+                                    class="text-sm font-black text-primary uppercase tracking-widest mb-6 flex items-center gap-2">
+                                    <i class="fas fa-bolt text-xs"></i> Quick Settlement
+                                </h3>
+                                <form action="/loans/repay" method="POST">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <input type="hidden" name="loan_id" value="<%= loan.id %>">
+                                    <input type="hidden" name="amount" value="<%= loan.emi %>">
+                                    <input type="hidden" name="date"
+                                        value="<%= new Date().toISOString().split('T')[0] %>">
+                                    <input type="hidden" name="month_for"
+                                        value="<%= new Date().toLocaleDateString('en-US', {month:'short', year:'numeric'}) %>">
+                                    <button type="submit"
+                                        class="w-full btn-primary py-4 shadow-xl shadow-primary/30 flex justify-center items-center gap-3 group">
+                                        <span class="font-black text-base uppercase tracking-widest">Post Monthly
+                                            EMI</span>
+                                        <i
+                                            class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                                    </button>
+                                </form>
+                                <% if(locals.user && locals.user.role==='admin' ) { %>
+                                    <button
+                                        class="w-full mt-4 btn-secondary py-3 text-primary bg-primary/10 hover:bg-primary/20 transition-colors border-none shadow-none text-sm font-bold tracking-widest uppercase"
+                                        onclick="document.getElementById('waive-modal').classList.remove('hidden')">
+                                        Waive Interest
+                                    </button>
+                                    <% } %>
+                                        <p
+                                            class="text-[10px] text-primary/60 text-center mt-4 font-bold uppercase tracking-tight">
+                                            Amount: <%= formatCurrency(loan.emi) %>
+                                        </p>
+                            </div>
+                            <% } %>
+                    </div>
+
+                    <!-- Right Column: Tables -->
+                    <div class="xl:col-span-2 space-y-8">
+                        <!-- EMI Table -->
+                        <div
+                            class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                            <div
+                                class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <h3 class="text-lg font-bold text-slate-800">Payment Schedule</h3>
+                                <a href="/loans/<%= loan.id %>/schedule/pdf"
+                                    class="btn-secondary py-2 px-4 text-xs font-bold flex items-center gap-2 shadow-sm">
+                                    <i class="fas fa-file-pdf text-rose-500"></i> Download PDF
+                                </a>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50/50">
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Mo.</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Due Date</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                EMI Amt</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Balance</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <% emiSchedule.forEach(function(schedule) { %>
+                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                <td class="px-6 py-4 text-sm font-black text-slate-400">
+                                                    <%= schedule.month %>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm font-medium text-slate-700">
+                                                    <%= new Date(schedule.dueDate).toLocaleDateString() %>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm font-black text-slate-900">
+                                                    <%= formatCurrency(schedule.emi) %>
+                                                </td>
+                                                <td class="px-6 py-4 text-sm font-bold text-slate-500">
+                                                    <%= formatCurrency(schedule.balance) %>
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    <% if (schedule.status==='paid' ) { %>
+                                                        <span class="badge success px-2 py-0.5 text-[9px]">PAID</span>
+                                                        <% } else if (schedule.status==='partial' ) { %>
+                                                            <span
+                                                                class="badge warning px-2 py-0.5 text-[9px]">PARTIAL</span>
+                                                            <% } else if (schedule.status==='overdue' ) { %>
+                                                                <span
+                                                                    class="badge danger px-2 py-0.5 text-[9px]">OVERDUE</span>
+                                                                <% } else { %>
+                                                                    <span
+                                                                        class="badge secondary px-2 py-0.5 text-[9px] opacity-50">PENDING</span>
+                                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Trans History -->
+                        <div
+                            class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                            <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+                                <h3 class="text-lg font-bold text-slate-800">Ledger Activity</h3>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50/50">
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Date</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Amout</th>
+                                            <th
+                                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                                                Reference</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <% if(repayments.length===0) { %>
+                                            <tr>
+                                                <td colspan="3"
+                                                    class="px-8 py-12 text-center text-slate-400 italic font-medium">No
+                                                    repayments logged on this account</td>
+                                            </tr>
+                                            <% } else { %>
+                                                <% repayments.forEach(r=> { %>
+                                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                                        <td class="px-6 py-4 text-sm text-slate-600">
+                                                            <%= new Date(r.date).toLocaleDateString() %>
+                                                        </td>
+                                                        <td class="px-6 py-4"><span
+                                                                class="badge success text-sm font-black">
+                                                                <%= formatCurrency(r.amount) %>
+                                                            </span></td>
+                                                        <td class="px-6 py-4 text-sm text-slate-500 font-medium">
+                                                            <%= r.remarks %>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Waive Modal -->
+            <div id="waive-modal"
+                class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div
+                    class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all border border-slate-200">
+                    <div class="p-8">
+                        <div
+                            class="flex items-center justify-center w-16 h-16 mx-auto bg-sky-100 rounded-full mb-6 text-sky-600">
+                            <i class="fas fa-hand-holding-usd text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900 text-center mb-2">Waive Interest</h3>
+
+                        <form action="/loans/waive" method="POST" class="flex flex-col gap-4 mt-6">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="loan_id" value="<%= loan.id %>">
+
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Amount
+                                    to Waive (₹)</label>
+                                <% const totalExpected=(loan.amount * loan.interest_rate * loan.tenure) / 100; const
+                                    maxWaive=Math.max(0, totalExpected - (loan.interest_waived || 0)); %>
+                                    <input type="number" name="waive_amount"
+                                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-slate-700"
+                                        required min="1" step="any" max="<%= maxWaive %>">
+                                    <p class="text-xs text-slate-400 mt-2">Max allowable waiver: <%=
+                                            formatCurrency(maxWaive) %>
+                                    </p>
+                            </div>
+
+                            <div class="flex flex-col gap-3 mt-4">
+                                <button type="submit"
+                                    class="btn-primary w-full py-3.5 font-bold shadow-lg shadow-primary/20 text-sm tracking-wide">
+                                    Confirm Waiver
+                                </button>
+                                <button type="button" class="btn-secondary w-full py-3 text-sm text-slate-500 font-bold"
+                                    onclick="document.getElementById('waive-modal').classList.add('hidden')">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+    </div>
+</body>
+
+</html>
