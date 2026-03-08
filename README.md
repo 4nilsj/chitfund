@@ -295,3 +295,4 @@ This project is for internal use. All rights reserved.
 
 **Version 2.1.0** | Last Updated: January 27, 2026  
 Made with ❤️ for efficient chit fund management
+ 
