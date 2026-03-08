@@ -2,8 +2,8 @@ name: Deploy to Oracle Server
 
 on:
   push:
-    branches: [ "master" ]  # or "main", depending on your default branch name
-  workflow_dispatch:        # Allows manual triggering
+    branches: [ "master", "main" ]  # Triggers on push to either branch name
+  workflow_dispatch:                # Allows manual triggering from the Actions tab
 
 jobs:
   deploy:
@@ -18,6 +18,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Navigate to the app directory (Change this if your path is different!)
+            # e.g., cd /var/www/chitfund or wherever you cloned the repo
             cd /var/www/chitfund
             
             # Discard any local testing changes
@@ -29,9 +30,9 @@ jobs:
             # Install new packages if any changed
             npm install --production
             
-            # Reload PM2 ecosystem smoothly
+            # Restart the PM2 process smoothly
+            # Replace 'chitfund' with your actual pm2 process name if different
             pm2 reload chitfund
             pm2 save
             
             echo "Deployment successful at $(date)"
-
