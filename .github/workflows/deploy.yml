@@ -20,9 +20,15 @@ jobs:
             # Navigate to the exact directory on the Oracle server
             cd /home/ubuntu/chitfund || exit 1
             
+            # 1. Take recursive ownership of the folder to fix EACCES npm errors
+            sudo chown -R $USER:$USER .
+            
+            # 2. Tell Git it is safe to operate in this directory (fixes fatal: not a git repo)
+            git config --global --add safe.directory /home/ubuntu/chitfund
+            
             # Discard any local testing changes
             git clean -fd
-            git checkout .
+            git reset --hard HEAD
             
             # Pull latest changes
             git pull origin master
