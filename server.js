@@ -22,6 +22,12 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// ── Security: enforce SESSION_SECRET in production ──
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    console.error('FATAL: SESSION_SECRET environment variable is not set. Set it in your .env or server environment before starting.');
+    process.exit(1);
+}
 const backupService = require('./services/backupService');
 
 const path = require('path');
@@ -49,8 +55,11 @@ app.use(bodyParser.json());
 app.set('view engine', 'ejs');
 
 // Session Setup
+// In production SESSION_SECRET must be set (enforced above).
+// In development/test a random secret is generated per-process (sessions won't survive restarts, which is fine locally).
+const sessionSecret = process.env.SESSION_SECRET || require('crypto').randomUUID();
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'chitfund-secret-key-change-this',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
