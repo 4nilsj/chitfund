@@ -1,0 +1,37 @@
+name: Deploy to Oracle Server
+
+on:
+  push:
+    branches: [ "master" ]  # or "main", depending on your default branch name
+  workflow_dispatch:        # Allows manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to VPS using SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Navigate to the app directory (Change this if your path is different!)
+            cd /var/www/chitfund
+            
+            # Discard any local testing changes
+            git reset --hard HEAD
+            
+            # Pull latest changes
+            git pull origin master
+            
+            # Install new packages if any changed
+            npm install --production
+            
+            # Reload PM2 ecosystem smoothly
+            pm2 reload chitfund
+            pm2 save
+            
+            echo "Deployment successful at $(date)"
+
