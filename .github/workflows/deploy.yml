@@ -17,12 +17,12 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to the app directory (Change this if your path is different!)
-            # e.g., cd /var/www/chitfund or wherever you cloned the repo
-            cd /var/www/chitfund
+            # Navigate to the home directory where the app is likely located
+            cd ~/API-Scanner/chitfund || cd ~/chitfund || exit 1
             
             # Discard any local testing changes
-            git reset --hard HEAD
+            git clean -fd
+            git checkout .
             
             # Pull latest changes
             git pull origin master
@@ -30,9 +30,9 @@ jobs:
             # Install new packages if any changed
             npm install --production
             
-            # Restart the PM2 process smoothly
-            # Replace 'chitfund' with your actual pm2 process name if different
-            pm2 reload chitfund
+            # Start or restart the PM2 process smoothly
+            # If PM2 doesn't know about it yet, it will start it. If it does, it will reload it.
+            pm2 start server.js --name chitfund --update-env || pm2 reload chitfund
             pm2 save
             
             echo "Deployment successful at $(date)"
