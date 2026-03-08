@@ -17,8 +17,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # Navigate to the home directory where the app is likely located
-            cd ~/API-Scanner/chitfund || cd ~/chitfund || exit 1
+            # Navigate to the exact directory on the Oracle server
+            cd /home/ubuntu/chitfund || exit 1
             
             # Discard any local testing changes
             git clean -fd
