@@ -1,6 +1,6 @@
 const TransactionService = require('../services/transactionService');
 const MemberService = require('../services/memberService');
-const { formatCurrency, logAudit } = require('../utils/helpers');
+const { formatCurrency, logAudit, buildRedirectUrl } = require('../utils/helpers');
 const { validationResult } = require('express-validator');
 const PDFDocument = require('pdfkit');
 
@@ -83,7 +83,7 @@ const TransactionController = {
 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.redirect(`/transactions?error=${encodeURIComponent(errors.array()[0].msg)}`);
+            return res.redirect(buildRedirectUrl('/transactions', { error: errors.array()[0].msg }));
         }
 
         try {
@@ -91,7 +91,7 @@ const TransactionController = {
             const duplicateMonth = await TransactionService.checkDuplicatePayment(memberId, type, date);
             if (duplicateMonth) {
                 const errorType = type === 'contribution' ? 'contribution' : 'repayment';
-                return res.redirect(`/transactions?error=duplicate_${errorType}&month=${duplicateMonth}`);
+                return res.redirect(buildRedirectUrl('/transactions', { error: `duplicate_${errorType}`, month: duplicateMonth }));
             }
 
             let paymentBatchId = null;
@@ -115,7 +115,7 @@ const TransactionController = {
             if (err.code === 'SQLITE_CONSTRAINT' || (err.message && err.message.includes('UNIQUE constraint'))) {
                 const transactionMonth = date.substring(0, 7);
                 const errorType = type === 'contribution' ? 'contribution' : 'repayment';
-                return res.redirect(`/transactions?error=duplicate_${errorType}&month=${transactionMonth}`);
+                return res.redirect(buildRedirectUrl('/transactions', { error: `duplicate_${errorType}`, month: transactionMonth }));
             }
             console.error(err);
             res.status(500).send("Error adding transaction");

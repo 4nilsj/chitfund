@@ -744,17 +744,21 @@ router.get("/:id/schedule/pdf", async (req, res) => {
 router.post("/waive", isAdmin, async (req, res) => {
   try {
     const { loan_id, waive_amount } = req.body;
+    const loanId = parseInt(loan_id, 10);
+    if (!Number.isInteger(loanId) || loanId <= 0) {
+      return res.redirect("/loans?error=Invalid+loan");
+    }
     const amount = parseFloat(waive_amount);
 
     if (!validateAmount(amount)) {
       return res.redirect(
-        buildRedirectUrl(`/loans/${loan_id}`, {
+        buildRedirectUrl(`/loans/${loanId}`, {
           error: "Invalid waiver amount",
         }),
       );
     }
 
-    const loan = await db.get("SELECT * FROM loans WHERE id = ?", [loan_id]);
+    const loan = await db.get("SELECT * FROM loans WHERE id = ?", [loanId]);
     if (!loan)
       return res.redirect(
         buildRedirectUrl("/loans", { error: "Loan not found" }),
@@ -767,7 +771,7 @@ router.post("/waive", isAdmin, async (req, res) => {
 
     if (amount > totalExpectedInterest - previouslyWaived) {
       return res.redirect(
-        buildRedirectUrl(`/loans/${loan_id}`, {
+        buildRedirectUrl(`/loans/${loanId}`, {
           error: "Cannot waive more than pending interest",
         }),
       );
@@ -792,7 +796,7 @@ router.post("/waive", isAdmin, async (req, res) => {
                  VALUES (?, ?, ?, 'waiver', ?, ?)`,
         [
           loan.member_id,
-          loan_id,
+          loanId,
           new Date().toISOString().split("T")[0],
           amount,
           remarks,
@@ -801,11 +805,11 @@ router.post("/waive", isAdmin, async (req, res) => {
 
       await db.run(
         "UPDATE loans SET interest_waived = ?, outstanding = ?, status = ? WHERE id = ?",
-        [newWaivedTotal, newOutstanding, newStatus, loan_id],
+        [newWaivedTotal, newOutstanding, newStatus, loanId],
       );
 
       await db.run("COMMIT");
-      await logAudit(req, "WAIVE_INTEREST", { loan_id, amount });
+      await logAudit(req, "WAIVE_INTEREST", { loan_id: loanId, amount });
 
       // Emit Real-Time Dashboard Update
       if (req.app.get("io")) {
@@ -813,7 +817,7 @@ router.post("/waive", isAdmin, async (req, res) => {
       }
 
       res.redirect(
-        buildRedirectUrl(`/loans/${loan_id}`, {
+        buildRedirectUrl(`/loans/${loanId}`, {
           msg: "Interest waived successfully",
         }),
       );
@@ -821,7 +825,7 @@ router.post("/waive", isAdmin, async (req, res) => {
       await db.run("ROLLBACK");
       console.error("Transaction Error (Waive Interest):", txnErr);
       res.redirect(
-        buildRedirectUrl(`/loans/${loan_id}`, {
+        buildRedirectUrl(`/loans/${loanId}`, {
           error: "Error processing waiver",
         }),
       );

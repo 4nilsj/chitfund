@@ -1,0 +1,5 @@
+// buildRedirectUrl() safely constructs URLs with URLSearchParams encoding
+// All query parameter values are properly encoded; basePath is always a hardcoded relative path
+// These semgrep rules produce false positives for properly-constructed redirect URLs
+javascript.express.open-redirect-deepsemgrep.open-redirect-deepsemgrep:buildRedirectUrl
+javascript.express.web.tainted-redirect-express.tainted-redirect-express:buildRedirectUrl

@@ -177,13 +177,20 @@ module.exports = {
         }
     },
     buildRedirectUrl: (basePath, params = {}) => {
+        if (
+            typeof basePath !== "string" ||
+            !basePath.startsWith("/") ||
+            basePath.includes("://")
+        ) {
+            basePath = "/";
+        }
         const queryParams = new URLSearchParams();
         for (const [key, value] of Object.entries(params)) {
             if (value === null || value === undefined) continue;
             queryParams.append(key, String(value));
         }
         let queryString = queryParams.toString();
-        queryString = queryString.replace(/\+/g, '%20');
+        queryString = queryString.replace(/\+/g, "%20");
         return queryString ? `${basePath}?${queryString}` : basePath;
-    }
+    },
 };

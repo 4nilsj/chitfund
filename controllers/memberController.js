@@ -281,7 +281,7 @@ const MemberController = {
                 req.app.get('io').emit('dashboard_update');
             }
 
-            res.redirect(`/members?type=${member.type}&msg=Member updated`);
+            res.redirect(buildRedirectUrl('/members', { type: member.type, msg: 'Member updated' }));
         } catch (err) {
             console.error(err);
             res.status(500).send("Error updating member");
@@ -336,7 +336,7 @@ const MemberController = {
                 req.app.get('io').emit('dashboard_update');
             }
 
-            res.redirect(`/members?type=${member ? member.type : 'member'}&msg=Member deleted permanently`);
+            res.redirect(buildRedirectUrl('/members', { type: member ? member.type : 'member', msg: 'Member deleted permanently' }));
         } catch (err) {
             console.error(err);
             res.status(500).send("Error deleting member");
