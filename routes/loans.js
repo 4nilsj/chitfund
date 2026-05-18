@@ -271,7 +271,7 @@ router.post('/add', canWrite, validateLoan, async (req, res) => {
         // Check Fund Balance
         const currentBalance = await getFundBalance();
         if (P > currentBalance) {
-            return res.redirect(`/loans?error=Insufficient fund balance. Available: ${formatCurrency(currentBalance)}`);
+            return res.redirect(buildRedirectUrl('/loans', { error: `Insufficient fund balance. Available: ${formatCurrency(currentBalance)}` }));
         }
 
         // Calculate EMI
@@ -343,21 +343,21 @@ router.post('/repay', canWrite, upload.single('receipt'), routeCsrf, validateRep
 
         // Check Overpayment
         if (payAmount > loan.outstanding) {
-            return res.redirect(`/loans?error=Payment exceeds outstanding amount: ${formatCurrency(loan.outstanding)}`);
+            return res.redirect(buildRedirectUrl('/loans', { error: `Payment exceeds outstanding amount: ${formatCurrency(loan.outstanding)}` }));
         }
 
         // Check for duplicate payment for the same month/loan
         // We check if a transaction exists for this loan with the same 'month_for' remark
         const existingRepayment = await db.get(
-            `SELECT id FROM transactions 
-             WHERE loan_id = ? 
-             AND type = 'repayment' 
+            `SELECT id FROM transactions
+             WHERE loan_id = ?
+             AND type = 'repayment'
              AND remarks LIKE ?`,
             [loan_id, `EMI for ${month_for}%`]
         );
 
         if (existingRepayment) {
-            return res.redirect(`/loans?error=EMI for ${month_for} already paid`);
+            return res.redirect(buildRedirectUrl('/loans', { error: `EMI for ${month_for} already paid` }));
         }
 
         try {

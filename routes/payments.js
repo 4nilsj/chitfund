@@ -12,10 +12,10 @@ router.post('/monthly', async (req, res) => {
         // Validate member exists and is active
         const member = await db.get("SELECT id, name, status FROM members WHERE id = ?", [member_id]);
         if (!member) {
-            return res.redirect('/?error=invalid_member');
+            return res.redirect(buildRedirectUrl('/', { error: 'invalid_member' }));
         }
         if (member.status !== 'active') {
-            return res.redirect('/?error=inactive_member');
+            return res.redirect(buildRedirectUrl('/', { error: 'inactive_member' }));
         }
 
         // Calculate monthly obligation
@@ -23,7 +23,7 @@ router.post('/monthly', async (req, res) => {
 
         // Check if already paid
         if (obligation.alreadyPaid) {
-            return res.redirect('/?error=already_paid_month');
+            return res.redirect(buildRedirectUrl('/', { error: 'already_paid_month' }));
         }
 
         const paidAmount = parseFloat(amount);
@@ -127,7 +127,10 @@ router.post('/monthly', async (req, res) => {
 
             // Commit
             await db.run('COMMIT');
-            res.redirect(`/?msg=Payment recorded successfully${isPartial ? ' (Partial)' : ''}&type=${isPartial ? 'warning' : 'success'}`);
+            res.redirect(buildRedirectUrl('/', {
+                msg: `Payment recorded successfully${isPartial ? ' (Partial)' : ''}`,
+                type: isPartial ? 'warning' : 'success'
+            }));
         } catch (err) {
             await db.run('ROLLBACK');
             throw err;
