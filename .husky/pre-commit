@@ -1,0 +1,56 @@
+#!/bin/sh
+
+echo "✨ Running tests..."
+npm test || exit 1
+
+echo "✨ Running lint-staged (Formatting and Linting)..."
+npx lint-staged || exit 1
+
+COUNTER_FILE=".git/security-scan-counter"
+MAX_COMMITS=10
+
+if [ ! -f "$COUNTER_FILE" ]; then
+    echo "1" > "$COUNTER_FILE"
+fi
+
+COUNTER=$(cat "$COUNTER_FILE")
+
+if [ "$COUNTER" -lt "$MAX_COMMITS" ]; then
+    echo "⏭️  Skipping security scan (Commit $COUNTER of $MAX_COMMITS)"
+    COUNTER=$((COUNTER + 1))
+    echo "$COUNTER" > "$COUNTER_FILE"
+    exit 0
+fi
+
+# If we reached max commits, reset counter to 1 and run the scan
+echo "1" > "$COUNTER_FILE"
+
+echo "==================================="
+echo "🚀 Running Security Pre-Commit Hooks (Commit $MAX_COMMITS)"
+echo "==================================="
+
+echo "\n🔍 Running Semgrep..."
+semgrep scan --config auto --error
+SEMGREP_EXIT_CODE=$?
+
+if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+    echo "❌ Semgrep found issues! Commit aborted."
+    exit $SEMGREP_EXIT_CODE
+fi
+
+echo "✅ Semgrep passed successfully!"
+
+echo "\n🛡️  Running Trivy..."
+# Scanning the filesystem for High & Critical vulnerabilities, misconfigurations, and exposed secrets
+trivy fs . --scanners vuln,config,secret --exit-code 1 --severity HIGH,CRITICAL --skip-dirs '**/node_modules' --skip-dirs '**/dist' --skip-dirs '**/build'
+TRIVY_EXIT_CODE=$?
+
+if [ $TRIVY_EXIT_CODE -ne 0 ]; then
+    echo "❌ Trivy found issues! Commit aborted."
+    exit $TRIVY_EXIT_CODE
+fi
+
+echo "✅ Trivy passed successfully!"
+
+echo "\n🎉 All security checks passed! Proceeding with commit..."
+exit 0
