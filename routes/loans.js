@@ -13,7 +13,8 @@ const {
     formatCurrency,
     calculateEMI,
     logAudit,
-    getFundBalance
+    getFundBalance,
+    buildRedirectUrl
 } = require('../utils/helpers');
 
 // Loans List
@@ -620,18 +621,18 @@ router.post('/waive', isAdmin, async (req, res) => {
         const amount = parseFloat(waive_amount);
 
         if (!validateAmount(amount)) {
-            return res.redirect(`/loans/${loan_id}?error=Invalid waiver amount`);
+            return res.redirect(buildRedirectUrl(`/loans/${loan_id}`, { error: 'Invalid waiver amount' }));
         }
 
         const loan = await db.get("SELECT * FROM loans WHERE id = ?", [loan_id]);
-        if (!loan) return res.redirect('/loans?error=Loan not found');
+        if (!loan) return res.redirect(buildRedirectUrl('/loans', { error: 'Loan not found' }));
 
         // Check against pending interest (approximate max to total expected interest)
         const totalExpectedInterest = (loan.amount * loan.interest_rate * loan.tenure) / 100;
         const previouslyWaived = loan.interest_waived || 0;
 
         if (amount > (totalExpectedInterest - previouslyWaived)) {
-            return res.redirect(`/loans/${loan_id}?error=Cannot waive more than pending interest`);
+            return res.redirect(buildRedirectUrl(`/loans/${loan_id}`, { error: 'Cannot waive more than pending interest' }));
         }
 
         try {
@@ -649,7 +650,7 @@ router.post('/waive', isAdmin, async (req, res) => {
 
             // Add waiver transaction
             await db.run(
-                `INSERT INTO transactions (member_id, loan_id, date, type, amount, remarks) 
+                `INSERT INTO transactions (member_id, loan_id, date, type, amount, remarks)
                  VALUES (?, ?, ?, 'waiver', ?, ?)`,
                 [loan.member_id, loan_id, new Date().toISOString().split('T')[0], amount, remarks]
             );
@@ -665,15 +666,15 @@ router.post('/waive', isAdmin, async (req, res) => {
                 req.app.get('io').emit('dashboard_update');
             }
 
-            res.redirect(`/loans/${loan_id}?msg=Interest waived successfully`);
+            res.redirect(buildRedirectUrl(`/loans/${loan_id}`, { msg: 'Interest waived successfully' }));
         } catch (txnErr) {
             await db.run("ROLLBACK");
             console.error("Transaction Error (Waive Interest):", txnErr);
-            res.redirect(`/loans/${loan_id}?error=Error processing waiver`);
+            res.redirect(buildRedirectUrl(`/loans/${loan_id}`, { error: 'Error processing waiver' }));
         }
     } catch (err) {
         console.error(err);
-        res.redirect('/loans?error=Error processing waiver');
+        res.redirect(buildRedirectUrl('/loans', { error: 'Error processing waiver' }));
     }
 });
 

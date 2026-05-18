@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
-const { calculateMonthlyObligation } = require('../utils/helpers');
+const { calculateMonthlyObligation, buildRedirectUrl } = require('../utils/helpers');
 const { generateReceipt } = require('../utils/receiptGenerator');
 
 // Process Combined Monthly Payment
@@ -34,7 +34,11 @@ router.post('/monthly', async (req, res) => {
 
         // Partial Payment Validation
         if (isPartial && !allow_partial) {
-            return res.redirect(`/?error=insufficient_payment&required=${obligation.totalDue}&paid=${paidAmount}`);
+            return res.redirect(buildRedirectUrl('/', {
+                error: 'insufficient_payment',
+                required: obligation.totalDue,
+                paid: paidAmount
+            }));
         }
 
         // Generate batch ID

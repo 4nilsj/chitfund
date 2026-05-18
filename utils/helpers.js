@@ -175,5 +175,15 @@ module.exports = {
         } catch (err) {
             console.error('Audit Log Error:', err);
         }
+    },
+    buildRedirectUrl: (basePath, params = {}) => {
+        const queryParams = new URLSearchParams();
+        for (const [key, value] of Object.entries(params)) {
+            if (value === null || value === undefined) continue;
+            queryParams.append(key, String(value));
+        }
+        let queryString = queryParams.toString();
+        queryString = queryString.replace(/\+/g, '%20');
+        return queryString ? `${basePath}?${queryString}` : basePath;
     }
 };

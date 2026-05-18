@@ -1,5 +1,5 @@
 const MemberService = require('../services/memberService');
-const { formatCurrency, sanitizeString } = require('../utils/helpers');
+const { formatCurrency, sanitizeString, buildRedirectUrl } = require('../utils/helpers');
 const { validationResult } = require('express-validator');
 
 const MemberController = {
@@ -229,8 +229,14 @@ const MemberController = {
     async create(req, res) {
         const { name, contact, type } = req.body;
         const errors = validationResult(req);
+        const displayType = ['member', 'public'].includes(type) ? type : 'member';
+
         if (!errors.isEmpty()) {
-            return res.redirect(`/members?type=${type}&msg=${errors.array()[0].msg}&typeMsg=error`);
+            return res.redirect(buildRedirectUrl('/members', {
+                type: displayType,
+                msg: errors.array()[0].msg,
+                typeMsg: 'error'
+            }));
         }
 
         try {
@@ -242,10 +248,14 @@ const MemberController = {
                 req.app.get('io').emit('dashboard_update');
             }
 
-            res.redirect(`/members?type=${type}&msg=Member added successfully`);
+            res.redirect(buildRedirectUrl('/members', { type: displayType, msg: 'Member added successfully' }));
         } catch (err) {
             if (err.message === "Member already exists") {
-                return res.redirect(`/members?type=${type}&msg=Member already exists&typeMsg=error`);
+                return res.redirect(buildRedirectUrl('/members', {
+                    type: displayType,
+                    msg: 'Member already exists',
+                    typeMsg: 'error'
+                }));
             }
             console.error(err);
             res.status(500).send("Error adding member");
