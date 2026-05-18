@@ -509,7 +509,7 @@ router.get('/export/:type', async (req, res) => {
         }
 
         const buffer = await workbook.xlsx.writeBuffer();
-        console.log(`[Export] Generated ${filename}. Buffer size: ${buffer.length} bytes`);
+        console.log(`[Export] Generated report. Buffer size: ${buffer.length} bytes`);
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

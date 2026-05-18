@@ -19,6 +19,12 @@ COPY . .
 # Create directory for SQLite DB
 RUN mkdir -p data
 
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+USER nodejs
+
 # Expose port
 EXPOSE 3000
 

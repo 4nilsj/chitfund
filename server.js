@@ -65,7 +65,8 @@ app.use(session({
     cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,              // Prevent JS access to session cookie
-        sameSite: 'lax'              // CSRF defence for same-site requests
+        sameSite: 'lax',             // CSRF defence for same-site requests
+        secure: process.env.NODE_ENV === 'production' // Require HTTPS in production
     }
 }));
 
