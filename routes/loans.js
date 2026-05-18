@@ -260,7 +260,7 @@ router.post('/add', canWrite, validateLoan, async (req, res) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return res.redirect(`/loans?error=${encodeURIComponent(errors.array()[0].msg)}`);
+        return res.redirect(buildRedirectUrl('/loans', { error: errors.array()[0].msg }));
     }
 
     try {
@@ -330,7 +330,7 @@ router.post('/repay', canWrite, upload.single('receipt'), routeCsrf, validateRep
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.redirect(`/loans?error=${encodeURIComponent(errors.array()[0].msg)}`);
+            return res.redirect(buildRedirectUrl('/loans', { error: errors.array()[0].msg }));
         }
 
         const { loan_id, date, month_for, amount } = req.body;
