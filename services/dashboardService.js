@@ -38,6 +38,9 @@ async function getDashboardData(user, fundName, query = {}) {
     const totalExpenses = await db.get(
       "SELECT SUM(amount) as total FROM transactions WHERE type = 'expense'",
     );
+    const totalPenalties = await db.get(
+      "SELECT SUM(amount) as total FROM transactions WHERE type = 'penalty'",
+    );
 
     const openingSetting = await db.get(
       "SELECT value FROM settings WHERE key = 'opening_balance'",
@@ -48,9 +51,14 @@ async function getDashboardData(user, fundName, query = {}) {
     const repayments = totalRepayments.total || 0;
     const disbursements = totalDisbursements.total || 0;
     const expenses = totalExpenses.total || 0;
+    const penalties = totalPenalties.total || 0;
 
     fundBalance =
-      contributions + repayments + openingBalance - (disbursements + expenses);
+      contributions +
+      repayments +
+      penalties +
+      openingBalance -
+      (disbursements + expenses);
   }
 
   const openingSetting = await db.get(

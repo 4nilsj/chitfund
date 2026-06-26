@@ -403,6 +403,27 @@
                                             </div>
                                         </div>
 
+                                        <div
+                                            class="bg-sky-50/50 dark:bg-sky-900/10 p-8 rounded-[2rem] border-2 border-sky-100/50 dark:border-sky-800/30 flex flex-col sm:flex-row items-center gap-8 group">
+                                            <div
+                                                class="w-20 h-20 rounded-3xl bg-white dark:bg-sky-900/30 border-2 border-sky-100 dark:border-sky-800/50 flex items-center justify-center text-3xl text-sky-500 shadow-xl group-hover:scale-110 transition-transform">
+                                                <i class="fas fa-history"></i>
+                                            </div>
+                                            <div class="flex-1 text-center sm:text-left">
+                                                <h3
+                                                    class="text-sm font-black text-sky-800 dark:text-sky-500 uppercase tracking-widest mb-2">
+                                                    Audit Trail</h3>
+                                                <p
+                                                    class="text-[11px] text-sky-600/80 dark:text-sky-400/80 leading-relaxed font-medium mb-6">
+                                                    View the system audit logs to trace administrative changes and deletions.</p>
+                                                <a href="/settings/audit-logs"
+                                                    class="btn-primary bg-sky-600 hover:bg-sky-700 border-none inline-flex items-center justify-center gap-3 px-10 py-4 shadow-xl shadow-sky-200">
+                                                    <span
+                                                        class="font-black uppercase tracking-widest text-[10px]">View Audit Logs</span>
+                                                </a>
+                                            </div>
+                                        </div>
+
                                         <% if(user && user.role==='admin' ) { %>
                                             <div class="pt-10 border-t border-slate-50 dark:border-slate-700">
                                                 <div

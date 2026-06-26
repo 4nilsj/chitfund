@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <%- include('partials/head') %>
+    <title>Audit Logs | <%= fundName %></title>
+</head>
+
+<body class="bg-background dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+
+        <main class="main-content md:ml-64 relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden p-8">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <i class="fas fa-history text-primary"></i> System Audit Trail
+                    </h1>
+                    <p class="text-slate-500 dark:text-slate-400 mt-1">Immutable log of administrative modifications and deletions</p>
+                </div>
+                <a href="/settings" class="btn-secondary flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Back to Settings
+                </a>
+            </header>
+
+            <!-- Logs Table -->
+            <div class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-700">
+                                <th class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Timestamp</th>
+                                <th class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">User</th>
+                                <th class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Action</th>
+                                <th class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">IP Address</th>
+                                <th class="px-8 py-5 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
+                            <% if (logs && logs.length > 0) { %>
+                                <% logs.forEach(log => { %>
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                        <td class="px-8 py-5 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                            <%= new Date(log.timestamp).toLocaleString() %>
+                                        </td>
+                                        <td class="px-8 py-5 text-sm font-black text-slate-900 dark:text-white">
+                                            <%= log.username || 'System' %>
+                                        </td>
+                                        <td class="px-8 py-5">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                                <%= log.action.includes('DELETE') ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
+                                                    log.action.includes('WAIVE') ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800' :
+                                                    'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800' %>">
+                                                <%= log.action %>
+                                            </span>
+                                        </td>
+                                        <td class="px-8 py-5 text-sm font-mono text-slate-500 dark:text-slate-400">
+                                            <%= log.ip_address %>
+                                        </td>
+                                        <td class="px-8 py-5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                                            <%= log.details %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="px-8 py-12 text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">
+                                        No audit entries found
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <% if (pagination && pagination.totalPages > 1) { %>
+                    <div class="px-8 py-6 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <span class="text-xs text-slate-500 dark:text-slate-400">
+                            Page <%= pagination.currentPage %> of <%= pagination.totalPages %>
+                        </span>
+                        <div class="flex gap-2">
+                            <% if (pagination.currentPage > 1) { %>
+                                <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage - 1 %>" class="btn-secondary py-2 px-4 text-xs font-bold">
+                                    Previous
+                                </a>
+                            <% } %>
+                            <% if (pagination.currentPage < pagination.totalPages) { %>
+                                <a href="<%= pagination.baseUrl %>?page=<%= pagination.currentPage + 1 %>" class="btn-secondary py-2 px-4 text-xs font-bold">
+                                    Next
+                                </a>
+                            <% } %>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </main>
+    </div>
+    <script src="/js/main.js"></script>
+</body>
+
+</html>

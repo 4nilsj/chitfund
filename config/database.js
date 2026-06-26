@@ -98,6 +98,7 @@ const db = {
     try {
       // Enable Foreign Key Enforcement
       await db.run("PRAGMA foreign_keys = ON;");
+      await db.run("PRAGMA journal_mode = WAL;");
 
       await db.run(membersTable);
       await db.run(loansTable);

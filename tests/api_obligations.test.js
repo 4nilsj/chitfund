@@ -7,10 +7,13 @@ describe("API Endpoints", () => {
   let agent, memberId;
 
   beforeAll(async () => {
-    await db.run("PRAGMA foreign_keys = ON;");
-    await db.run("DELETE FROM users WHERE 1=1");
-    await db.run("DELETE FROM members WHERE 1=1");
+    await db.run("PRAGMA foreign_keys = OFF;");
+    await db.run("DELETE FROM transactions WHERE 1=1");
     await db.run("DELETE FROM loans WHERE 1=1");
+    await db.run("DELETE FROM members WHERE 1=1");
+    await db.run("DELETE FROM audit_logs WHERE 1=1");
+    await db.run("DELETE FROM users WHERE 1=1");
+    await db.run("PRAGMA foreign_keys = ON;");
 
     const hash = bcrypt.hashSync("apipass", 10);
     await db.run(
@@ -59,7 +62,12 @@ describe("API Endpoints", () => {
   });
 
   afterAll(async () => {
-    await db.run("DELETE FROM users WHERE 1=1");
+    await db.run("PRAGMA foreign_keys = OFF;");
+    await db.run("DELETE FROM transactions WHERE 1=1");
+    await db.run("DELETE FROM loans WHERE 1=1");
     await db.run("DELETE FROM members WHERE 1=1");
+    await db.run("DELETE FROM audit_logs WHERE 1=1");
+    await db.run("DELETE FROM users WHERE 1=1");
+    await db.run("PRAGMA foreign_keys = ON;");
   });
 });
