@@ -98,7 +98,11 @@ const db = {
     try {
       // Enable Foreign Key Enforcement
       await db.run("PRAGMA foreign_keys = ON;");
-      await db.run("PRAGMA journal_mode = WAL;");
+      if (process.env.NODE_ENV !== "test") {
+        await db.run("PRAGMA journal_mode = WAL;");
+      } else {
+        await db.run("PRAGMA journal_mode = DELETE;");
+      }
 
       await db.run(membersTable);
       await db.run(loansTable);
