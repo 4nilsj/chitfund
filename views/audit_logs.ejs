@@ -4,9 +4,27 @@
 <head>
     <%- include('partials/head') %>
     <title>Audit Logs | <%= fundName %></title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
-<body class="bg-background dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200">
+<body class="bg-background dark:bg-slate-900 text-slate-800 dark:text-slate-200 transition-colors duration-200"
+      x-data="{
+          open: false,
+          selectedLog: null,
+          getDetails() {
+              if (!this.selectedLog || !this.selectedLog.details) return {};
+              if (typeof this.selectedLog.details === 'object') return this.selectedLog.details;
+              try {
+                  return JSON.parse(this.selectedLog.details);
+              } catch(e) {
+                  return { message: this.selectedLog.details };
+              }
+          },
+          isDiff() {
+              const details = this.getDetails();
+              return details && (details.before !== undefined || details.after !== undefined);
+          }
+      }">
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar -->
         <%- include('partials/sidebar') %>
@@ -41,7 +59,9 @@
                         <tbody class="divide-y divide-slate-50 dark:divide-slate-700">
                             <% if (logs && logs.length > 0) { %>
                                 <% logs.forEach(log => { %>
-                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors cursor-pointer group"
+                                        data-log="<%= encodeURIComponent(JSON.stringify(log)) %>"
+                                        @click="selectedLog = JSON.parse(decodeURIComponent($el.dataset.log)); open = true">
                                         <td class="px-8 py-5 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                                             <%= new Date(log.timestamp).toLocaleString() %>
                                         </td>
@@ -59,8 +79,24 @@
                                         <td class="px-8 py-5 text-sm font-mono text-slate-500 dark:text-slate-400">
                                             <%= log.ip_address %>
                                         </td>
-                                        <td class="px-8 py-5 text-xs text-slate-600 dark:text-slate-300 font-medium">
-                                            <%= log.details %>
+                                        <td class="px-8 py-5 text-xs text-slate-600 dark:text-slate-300 font-medium max-w-[200px] truncate">
+                                            <% 
+                                                let displayDetails = log.details;
+                                                try {
+                                                    const parsed = JSON.parse(log.details);
+                                                    if (parsed && parsed.message) {
+                                                        displayDetails = parsed.message;
+                                                    } else if (parsed && (parsed.before || parsed.after)) {
+                                                        displayDetails = `${log.action} modification`;
+                                                    } else {
+                                                        displayDetails = JSON.stringify(parsed);
+                                                    }
+                                                } catch(e) {}
+                                                if (displayDetails.length > 80) {
+                                                    displayDetails = displayDetails.substring(0, 80) + '...';
+                                                }
+                                            %>
+                                            <%= displayDetails %>
                                         </td>
                                     </tr>
                                 <% }); %>
@@ -98,6 +134,149 @@
             </div>
         </main>
     </div>
+    <script src="/js/main.js"></script>
+
+    <!-- Audit Detail Drawer -->
+    <div class="fixed inset-0 z-50 overflow-hidden" 
+         x-show="open" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         style="display: none;">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" @click="open = false"></div>
+
+        <!-- Drawer Content -->
+        <div class="absolute inset-y-0 right-0 w-full max-w-2xl bg-white dark:bg-slate-800 shadow-2xl border-l border-slate-100 dark:border-slate-700 flex flex-col h-full transform"
+             x-show="open"
+             x-transition:enter="transition ease-out duration-300 transform"
+             x-transition:enter-start="translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-200 transform"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="translate-x-full">
+            
+            <!-- Header -->
+            <div class="px-8 py-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-info-circle text-primary"></i> Audit Entry Details
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" x-text="selectedLog ? new Date(selectedLog.timestamp).toLocaleString() : ''"></p>
+                </div>
+                <button @click="open = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-8 space-y-6">
+                <!-- Metadata Grid -->
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Administrative User</span>
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white" x-text="selectedLog ? (selectedLog.username || 'System') : ''"></span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Action Executed</span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider mt-1"
+                              :class="selectedLog && selectedLog.action.includes('DELETE') ? 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
+                                      selectedLog && selectedLog.action.includes('WAIVE') ? 'bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800' :
+                                      'bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'"
+                              x-text="selectedLog ? selectedLog.action : ''">
+                        </span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">IP Address</span>
+                        <span class="text-sm font-mono text-slate-600 dark:text-slate-300" x-text="selectedLog ? selectedLog.ip_address : ''"></span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Device / User Agent</span>
+                        <span class="text-xs text-slate-600 dark:text-slate-300 block break-all" :title="selectedLog ? selectedLog.user_agent : ''" x-text="selectedLog ? (selectedLog.user_agent || 'N/A') : 'N/A'"></span>
+                    </div>
+                </div>
+
+                <!-- Details Section -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3">Payload Details</h3>
+                    
+                    <!-- If Diff Exists -->
+                    <template x-if="isDiff()">
+                        <div class="space-y-6">
+                            <!-- Side-by-side or stack comparison -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Before State -->
+                                <div class="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
+                                    <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fas fa-minus-circle"></i> Before / Previous State
+                                    </div>
+                                    <div class="p-4 bg-slate-50/50 dark:bg-slate-900/20">
+                                        <template x-if="getDetails().before">
+                                            <table class="w-full text-left text-xs divide-y divide-slate-100 dark:divide-slate-800">
+                                                <tbody>
+                                                    <template x-for="[key, value] in Object.entries(getDetails().before)">
+                                                        <tr class="py-1">
+                                                            <td class="font-bold text-slate-400 pr-4 py-1" x-text="key"></td>
+                                                            <td class="font-mono text-slate-600 dark:text-slate-300 py-1 break-all" x-text="typeof value === 'object' ? JSON.stringify(value) : value"></td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </template>
+                                        <template x-if="!getDetails().before">
+                                            <span class="text-xs text-slate-400 italic">None / Initial State</span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- After State -->
+                                <div class="border border-slate-100 dark:border-slate-800 rounded-xl overflow-hidden">
+                                    <div class="bg-slate-50 dark:bg-slate-800/80 px-4 py-2 border-b border-slate-100 dark:border-slate-800 text-[10px] font-bold text-green-500 uppercase tracking-wider flex items-center gap-2">
+                                        <i class="fas fa-plus-circle"></i> After / New State
+                                    </div>
+                                    <div class="p-4 bg-slate-50/50 dark:bg-slate-900/20">
+                                        <template x-if="getDetails().after">
+                                            <table class="w-full text-left text-xs divide-y divide-slate-100 dark:divide-slate-800">
+                                                <tbody>
+                                                    <template x-for="[key, value] in Object.entries(getDetails().after)">
+                                                        <tr class="py-1">
+                                                            <td class="font-bold text-slate-400 pr-4 py-1" x-text="key"></td>
+                                                            <td class="font-mono text-slate-600 dark:text-slate-300 py-1 break-all" x-text="typeof value === 'object' ? JSON.stringify(value) : value"></td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </template>
+                                        <template x-if="!getDetails().after">
+                                            <span class="text-xs text-slate-400 italic text-red-500 font-semibold">Deleted / Cleared</span>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- If No Diff, Show standard JSON pre-block -->
+                    <template x-if="!isDiff()">
+                        <div class="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <pre class="text-xs font-mono text-slate-600 dark:text-slate-300 overflow-x-auto" x-text="JSON.stringify(getDetails(), null, 2)"></pre>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-8 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 flex justify-end">
+                <button @click="open = false" class="btn-secondary text-xs font-bold">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/main.js"></script>
 </body>
 

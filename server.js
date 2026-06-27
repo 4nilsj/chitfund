@@ -31,6 +31,7 @@ if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   process.exit(1);
 }
 const backupService = require("./services/backupService");
+const penaltyService = require("./services/penaltyService");
 
 const path = require("path");
 
@@ -194,6 +195,8 @@ if (require.main === module) {
   db.init().then(() => {
     // Initialize Backup Service
     backupService.initBackupSchedule();
+    // Initialize Penalty Scheduler
+    penaltyService.initPenaltySchedule();
 
     server.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);

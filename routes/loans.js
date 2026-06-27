@@ -15,6 +15,7 @@ const {
   logAudit,
   getFundBalance,
   buildRedirectUrl,
+  preciseRound,
 } = require("../utils/helpers");
 
 // Loans List
@@ -451,16 +452,18 @@ router.post(
         await db.run("BEGIN TRANSACTION");
 
         // Pre-calculate Outstanding to determine if closing
-        const totalEMIAmount =
-          loan.emi * loan.tenure - (loan.interest_waived || 0);
+        const totalEMIAmount = preciseRound(
+          loan.emi * loan.tenure - (loan.interest_waived || 0),
+        );
         const currentTotalRepaidRes = await db.get(
           "SELECT SUM(amount) as total FROM transactions WHERE loan_id = ? AND type = 'repayment'",
           [loan_id],
         );
         const currentTotalRepaid = currentTotalRepaidRes.total || 0;
 
-        const newOutstanding =
-          totalEMIAmount - (currentTotalRepaid + payAmount);
+        const newOutstanding = preciseRound(
+          totalEMIAmount - (currentTotalRepaid + payAmount),
+        );
         const newStatus = newOutstanding <= 0 ? "closed" : "active";
 
         let remarks = `EMI for ${month_for}`;
@@ -781,8 +784,8 @@ router.post("/waive", isAdmin, async (req, res) => {
       await db.run("BEGIN TRANSACTION");
 
       // Update loan record proactively
-      const newWaivedTotal = previouslyWaived + amount;
-      const newOutstanding = loan.outstanding - amount;
+      const newWaivedTotal = preciseRound(previouslyWaived + amount);
+      const newOutstanding = preciseRound(loan.outstanding - amount);
       const newStatus = newOutstanding <= 0 ? "closed" : "active";
 
       let remarks = "Interest Waived";

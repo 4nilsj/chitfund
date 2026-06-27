@@ -447,6 +447,23 @@
                     </label>
                 </div>
 
+                <!-- Split Allocation Inputs (Visible only when manual is checked) -->
+                <div id="split-allocation-container" class="space-y-4 hidden bg-slate-50 dark:bg-slate-900/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 mb-6">
+                    <h4 class="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 mb-2">Split Allocation (₹)</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between gap-4">
+                            <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Contribution split</span>
+                            <input type="number" name="contribution_split" id="split-contribution-input" min="0" step="0.01" value="0" oninput="updateSplitTotal()"
+                                class="w-32 text-right px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-slate-800 dark:text-white">
+                        </div>
+                        <div id="split-loans-container" class="space-y-3"></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500">
+                        <span>Sum of splits</span>
+                        <span id="split-total-sum" class="font-black text-sm text-slate-700 dark:text-slate-300">₹0</span>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label class="text-slate-700 font-semibold mb-2 block text-sm">Collection Remarks</label>
                     <input type="text" name="remarks" placeholder="Optional notes for this collection period..."
@@ -604,23 +621,32 @@
         function togglePartialPayment() {
             const isPartial = document.getElementById('allow-partial').checked;
             const amountInput = document.getElementById('monthly-amount');
+            const splitContainer = document.getElementById('split-allocation-container');
 
             if (isPartial) {
-                amountInput.readOnly = false;
-                amountInput.classList.remove('bg-slate-50', 'dark:bg-slate-900/50');
-                amountInput.classList.add('bg-white', 'dark:bg-slate-800', 'ring-2', 'ring-primary/20');
-                amountInput.focus();
-            } else {
+                splitContainer.classList.remove('hidden');
                 amountInput.readOnly = true;
                 amountInput.classList.add('bg-slate-50', 'dark:bg-slate-900/50');
                 amountInput.classList.remove('bg-white', 'dark:bg-slate-800', 'ring-2', 'ring-primary/20');
+                updateSplitTotal();
+            } else {
+                splitContainer.classList.add('hidden');
                 updateMonthlyObligation();
             }
         }
 
-        // ... (Include other functions: updateMonthlyObligation, openMonthlyPaymentModal, openCollectionDetails)
-        // For brevity in this tool call, assuming main.js or the script block handles them. 
-        // I will paste the critical functions here to ensure they work.
+        function updateSplitTotal() {
+            const contrVal = parseFloat(document.getElementById('split-contribution-input').value) || 0;
+            let loanValSum = 0;
+            document.querySelectorAll('.loan-split-input').forEach(input => {
+                loanValSum += parseFloat(input.value) || 0;
+            });
+            const total = contrVal + loanValSum;
+            document.getElementById('split-total-sum').textContent = '₹' + total.toLocaleString('en-IN');
+            if (document.getElementById('allow-partial').checked) {
+                document.getElementById('monthly-amount').value = total;
+            }
+        }
 
         async function updateMonthlyObligation() {
             const memberId = document.getElementById('monthly-member-select').value;
@@ -628,6 +654,7 @@
 
             if (!memberId || !month) {
                 document.getElementById('payment-breakdown').classList.add('hidden');
+                document.getElementById('split-allocation-container').classList.add('hidden');
                 return;
             }
 
@@ -638,20 +665,40 @@
                 document.getElementById('payment-breakdown').classList.remove('hidden');
                 document.getElementById('breakdown-contribution').textContent = '₹' + data.contributionAmount.toLocaleString('en-IN');
 
+                // Populate Contribution split
+                const contrInput = document.getElementById('split-contribution-input');
+                contrInput.value = data.contributionAmount;
+                contrInput.max = data.contributionAmount;
+
                 const loansContainer = document.getElementById('breakdown-loans');
                 loansContainer.innerHTML = '';
+
+                const splitLoansContainer = document.getElementById('split-loans-container');
+                splitLoansContainer.innerHTML = '';
 
                 if (data.loans && data.loans.length > 0) {
                     data.loans.forEach(loan => {
                         loansContainer.innerHTML += `<div class="flex justify-between">
-                    <span class="text-slate-500">Loan #${loan.id} EMI</span>
-                    <span class="font-medium text-slate-800">₹${loan.emi.toLocaleString('en-IN')}</span>
-                </div>`;
+                            <span class="text-slate-500">Loan #${loan.id} EMI</span>
+                            <span class="font-medium text-slate-800">₹${loan.emi.toLocaleString('en-IN')}</span>
+                        </div>`;
+                        
+                        const maxVal = Math.min(loan.emi, loan.outstanding);
+                        splitLoansContainer.innerHTML += `
+                            <div class="flex items-center justify-between gap-4">
+                                <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">Loan #${loan.id} split</span>
+                                <input type="number" name="loan_splits[${loan.id}]" min="0" max="${maxVal}" step="0.01" value="${maxVal}" oninput="updateSplitTotal()"
+                                    class="loan-split-input w-32 text-right px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-sm font-bold text-slate-800 dark:text-white">
+                            </div>
+                        `;
                     });
                 }
 
                 document.getElementById('breakdown-total').textContent = '₹' + data.totalDue.toLocaleString('en-IN');
-                if (!document.getElementById('allow-partial').checked) {
+                
+                if (document.getElementById('allow-partial').checked) {
+                    updateSplitTotal();
+                } else {
                     document.getElementById('monthly-amount').value = data.totalDue;
                 }
 

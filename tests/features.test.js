@@ -2,12 +2,14 @@ const request = require("supertest");
 const express = require("express");
 const db = require("../config/database");
 
-// Mock database for testing
-jest.mock("../config/database");
+const originalGet = db.get;
+const originalAll = db.all;
+const originalRun = db.run;
 
-afterAll(() => {
-  const realDb = jest.requireActual("../config/database");
-  Object.assign(db, realDb);
+afterEach(() => {
+  db.get = originalGet;
+  db.all = originalAll;
+  db.run = originalRun;
 });
 
 describe("Member Loan Breakdown Tests", () => {

@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require("../config/database");
 const {
   calculateMonthlyObligation,
+  preciseRound,
   buildRedirectUrl,
 } = require("../utils/helpers");
 const { generateReceipt } = require("../utils/receiptGenerator");
@@ -34,7 +35,7 @@ router.post("/monthly", async (req, res) => {
       );
     }
 
-    const paidAmount = parseFloat(amount);
+    const paidAmount = preciseRound(parseFloat(amount));
     const isPartial = paidAmount < obligation.totalDue;
 
     // Handle floating point precision issues roughly
@@ -64,10 +65,23 @@ router.post("/monthly", async (req, res) => {
 
     try {
       // 1. Allocate to Contribution (Priority 1)
-      const contributionToPay = Math.min(
-        remainingAmount,
-        obligation.contributionAmount,
-      );
+      let contributionToPay;
+      const isSplitAvailable =
+        isPartial &&
+        (req.body.contribution_split !== undefined ||
+          req.body.loan_splits !== undefined);
+
+      if (isSplitAvailable) {
+        contributionToPay = Math.min(
+          preciseRound(parseFloat(req.body.contribution_split) || 0),
+          obligation.contributionAmount,
+        );
+      } else {
+        contributionToPay = Math.min(
+          remainingAmount,
+          obligation.contributionAmount,
+        );
+      }
 
       if (contributionToPay > 0) {
         const contributionResult = await db.run(
@@ -114,13 +128,20 @@ router.post("/monthly", async (req, res) => {
       // 2. Allocate to Loans (Priority 2)
       if (obligation.loans) {
         for (const loan of obligation.loans) {
-          if (remainingAmount <= 0) break;
-
-          const loanPayment = Math.min(
-            remainingAmount,
-            loan.emi,
-            loan.outstanding,
-          );
+          let loanPayment;
+          if (isSplitAvailable) {
+            const splitVal = req.body.loan_splits
+              ? req.body.loan_splits[loan.id]
+              : 0;
+            loanPayment = Math.min(
+              preciseRound(parseFloat(splitVal) || 0),
+              loan.emi,
+              loan.outstanding,
+            );
+          } else {
+            if (remainingAmount <= 0) break;
+            loanPayment = Math.min(remainingAmount, loan.emi, loan.outstanding);
+          }
 
           if (loanPayment > 0) {
             await db.run(
@@ -139,14 +160,16 @@ router.post("/monthly", async (req, res) => {
 
             // Update loan outstanding
             // Outstanding = (EMI × Tenure) - Waived - Total Repayments Made
-            const totalEMIAmount =
-              loan.emi * loan.tenure - (loan.interest_waived || 0);
+            const totalEMIAmount = preciseRound(
+              loan.emi * loan.tenure - (loan.interest_waived || 0),
+            );
             const totalRepayments = await db.get(
               'SELECT COALESCE(SUM(amount), 0) as total FROM transactions WHERE loan_id = ? AND type = "repayment"',
               [loan.id],
             );
-            const newOutstanding =
-              totalEMIAmount - (totalRepayments.total || 0);
+            const newOutstanding = preciseRound(
+              totalEMIAmount - (totalRepayments.total || 0),
+            );
             const newStatus = newOutstanding <= 0 ? "closed" : "active";
 
             await db.run(

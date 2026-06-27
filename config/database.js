@@ -219,6 +219,11 @@ const db = {
                 )
             `);
 
+      try {
+        await db.run("ALTER TABLE audit_logs ADD COLUMN user_agent TEXT");
+        console.log("Migration: Added user_agent column to audit_logs.");
+      } catch (e) {}
+
       // Migration: Add UNIQUE index for contributions to prevent duplicates
       try {
         await db.run(`

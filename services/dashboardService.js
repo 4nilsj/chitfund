@@ -1,5 +1,5 @@
 const db = require("../config/database");
-const { formatCurrency } = require("../utils/helpers");
+const { formatCurrency, preciseRound } = require("../utils/helpers");
 
 async function getDashboardData(user, fundName, query = {}) {
   const userType = user.userType;
@@ -24,7 +24,7 @@ async function getDashboardData(user, fundName, query = {}) {
     );
     const contributions = memberContributions.total || 0;
     const disbursements = memberDisbursements.total || 0;
-    fundBalance = contributions - disbursements;
+    fundBalance = preciseRound(contributions - disbursements);
   } else {
     const totalContributions = await db.get(
       "SELECT SUM(amount) as total FROM transactions WHERE type = 'contribution'",
@@ -53,12 +53,13 @@ async function getDashboardData(user, fundName, query = {}) {
     const expenses = totalExpenses.total || 0;
     const penalties = totalPenalties.total || 0;
 
-    fundBalance =
+    fundBalance = preciseRound(
       contributions +
-      repayments +
-      penalties +
-      openingBalance -
-      (disbursements + expenses);
+        repayments +
+        penalties +
+        openingBalance -
+        (disbursements + expenses),
+    );
   }
 
   const openingSetting = await db.get(
@@ -119,6 +120,11 @@ async function getDashboardData(user, fundName, query = {}) {
       calculatedPrincipalPending += Math.max(0, loan.amount - principalRepaid);
     }
   }
+
+  totalInterestEarned = preciseRound(totalInterestEarned);
+  totalInterestCollected = preciseRound(totalInterestCollected);
+  calculatedTotalOutstanding = preciseRound(calculatedTotalOutstanding);
+  calculatedPrincipalPending = preciseRound(calculatedPrincipalPending);
 
   // Recent Transactions
   const recentTxns = isMember

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const cron = require("node-cron");
+const zlib = require("zlib");
 
 const DB_PATH = path.join(__dirname, "../chitfund.db");
 const BACKUP_DIR = path.join(__dirname, "../backups");
@@ -14,7 +15,11 @@ const cleanOldBackups = () => {
   try {
     const files = fs
       .readdirSync(BACKUP_DIR)
-      .filter((f) => f.startsWith("chitfund_") && f.endsWith(".db"))
+      .filter(
+        (f) =>
+          f.startsWith("chitfund_") &&
+          (f.endsWith(".db.gz") || f.endsWith(".db")),
+      )
       .map((f) => ({
         name: f,
         path: path.join(BACKUP_DIR, f),
@@ -35,28 +40,44 @@ const cleanOldBackups = () => {
 };
 
 const backupDatabase = () => {
-  try {
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/:/g, "-")
-      .replace(/\..+/, "");
-    const backupPath = path.join(BACKUP_DIR, `chitfund_${timestamp}.db`);
+  return new Promise((resolve) => {
+    try {
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/:/g, "-")
+        .replace(/\..+/, "");
+      const backupPath = path.join(BACKUP_DIR, `chitfund_${timestamp}.db.gz`);
 
-    fs.copyFileSync(DB_PATH, backupPath);
-    console.log(`[Backup] Database backed up successfully to: ${backupPath}`);
-    cleanOldBackups();
-    return backupPath;
-  } catch (err) {
-    console.error("[Backup] Error creating backup:", err);
-    return null;
-  }
+      const readStream = fs.createReadStream(DB_PATH);
+      const gzip = zlib.createGzip();
+      const writeStream = fs.createWriteStream(backupPath);
+
+      readStream
+        .pipe(gzip)
+        .pipe(writeStream)
+        .on("finish", () => {
+          console.log(
+            `[Backup] Database backed up and compressed successfully to: ${backupPath}`,
+          );
+          cleanOldBackups();
+          resolve(backupPath);
+        })
+        .on("error", (err) => {
+          console.error("[Backup] Error compressing database backup:", err);
+          resolve(null);
+        });
+    } catch (err) {
+      console.error("[Backup] Error creating compressed backup:", err);
+      resolve(null);
+    }
+  });
 };
 
 const initBackupSchedule = () => {
   // Schedule backup daily at midnight (00:00)
-  cron.schedule("0 0 * * *", () => {
+  cron.schedule("0 0 * * *", async () => {
     console.log("[Backup] Starting scheduled backup...");
-    backupDatabase();
+    await backupDatabase();
   });
   console.log("[Backup] Backup scheduler initialized (Daily at 00:00)");
 };

@@ -5,8 +5,6 @@ const fs = require("fs");
 const path = require("path");
 const backupService = require("../services/backupService");
 
-// Mock fs.copyFileSync for backup test
-jest.spyOn(fs, "copyFileSync").mockImplementation(() => {});
 jest.spyOn(console, "log").mockImplementation(() => {}); // Silence logs
 
 describe("New Features Test Suite", () => {
@@ -121,14 +119,48 @@ describe("New Features Test Suite", () => {
 
   describe("Automated Backups", () => {
     it("should trigger backup creation", async () => {
-      // Reset spy
-      fs.copyFileSync.mockClear();
+      const zlib = require("zlib");
+      const writeStreamMock = {
+        on: jest.fn(function (event, cb) {
+          if (event === "finish") setTimeout(cb, 0);
+          return this;
+        }),
+      };
+      const gzipMock = {
+        pipe: jest.fn((dest) => dest),
+      };
+      const readStreamMock = {
+        pipe: jest.fn((dest) => dest),
+      };
 
-      const result = backupService.backupDatabase();
+      const spyRead = jest
+        .spyOn(fs, "createReadStream")
+        .mockReturnValue(readStreamMock);
+      const spyWrite = jest
+        .spyOn(fs, "createWriteStream")
+        .mockReturnValue(writeStreamMock);
+
+      const originalCreateGzip = zlib.createGzip;
+      Object.defineProperty(zlib, "createGzip", {
+        value: jest.fn(() => gzipMock),
+        configurable: true,
+        writable: true,
+      });
+
+      const result = await backupService.backupDatabase();
 
       expect(result).not.toBeNull();
-      expect(fs.copyFileSync).toHaveBeenCalled();
+      expect(spyWrite).toHaveBeenCalled();
       expect(result).toContain("chitfund_"); // Timestamped file
+      expect(result).toContain(".db.gz");
+
+      spyRead.mockRestore();
+      spyWrite.mockRestore();
+      Object.defineProperty(zlib, "createGzip", {
+        value: originalCreateGzip,
+        configurable: true,
+        writable: false,
+      });
     });
   });
 
@@ -218,6 +250,81 @@ describe("New Features Test Suite", () => {
       );
       expect(loanReverted.status).toBe("active");
       expect(loanReverted.outstanding).toBe(total);
+    });
+  });
+
+  describe("Late Penalties", () => {
+    const penaltyService = require("../services/penaltyService");
+    let penaltyMemberIds = [];
+    const penaltyMonth = "2026-11";
+
+    beforeAll(async () => {
+      // Clean for isolation
+      await db.run("DELETE FROM transactions");
+      await db.run("DELETE FROM loans");
+      await db.run("DELETE FROM members");
+
+      // Add 3 clean members
+      for (let i = 1; i <= 3; i++) {
+        const res = await db.run(
+          "INSERT INTO members (name, type, status) VALUES (?, 'member', 'active')",
+          [`Penalty Member ${i}`],
+        );
+        penaltyMemberIds.push(res.lastID);
+      }
+    });
+
+    it("should assess 0 penalties if all members have paid for the month", async () => {
+      // Record contributions for all members for penaltyMonth
+      for (const mId of penaltyMemberIds) {
+        await db.run(
+          "INSERT INTO transactions (member_id, type, amount, date, payment_batch_id, remarks) VALUES (?, 'contribution', 1000, ?, ?, 'Paid')",
+          [mId, `${penaltyMonth}-01`, penaltyMonth],
+        );
+      }
+
+      const count = await penaltyService.assessLatePenalties(penaltyMonth);
+      expect(count).toBe(0);
+    });
+
+    it("should assess penalties for delinquent members in a new month", async () => {
+      const nextMonth = "2026-12"; // new month with no payments
+
+      const count = await penaltyService.assessLatePenalties(nextMonth);
+      // All 3 members should be delinquent
+      expect(count).toBe(3);
+
+      // Verify transactions created
+      const penalties = await db.all(
+        "SELECT * FROM transactions WHERE type = 'penalty' AND remarks LIKE ?",
+        [`Late payment penalty for ${nextMonth}%`],
+      );
+      expect(penalties.length).toBe(3);
+      expect(penalties[0].amount).toBe(100.0); // default penalty amount
+    });
+
+    it("should not double-assess penalties for the same month", async () => {
+      const nextMonth = "2026-12";
+      const count = await penaltyService.assessLatePenalties(nextMonth);
+      expect(count).toBe(0);
+    });
+
+    it("should respect settings for penalty amount", async () => {
+      const testMonth = "2027-01";
+      // Update settings
+      await agent.post("/settings/penalty-rules").send({
+        penalty_amount: 150.0,
+        penalty_grace_day: 12,
+      });
+
+      const count = await penaltyService.assessLatePenalties(testMonth);
+      expect(count).toBe(3);
+
+      const penalties = await db.all(
+        "SELECT * FROM transactions WHERE type = 'penalty' AND remarks LIKE ?",
+        [`Late payment penalty for ${testMonth}%`],
+      );
+      expect(penalties[0].amount).toBe(150.0); // configured penalty amount
     });
   });
 });

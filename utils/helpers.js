@@ -8,6 +8,9 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+const preciseRound = (val) =>
+  Math.round((parseFloat(val) + Number.EPSILON) * 100) / 100;
+
 const validateContact = (contact) => {
   const cleaned = String(contact).replace(/\D/g, "");
   return /^[6-9][0-9]{9}$/.test(cleaned);
@@ -145,6 +148,7 @@ const calculateEMI = (principal, rate, tenure) => {
 
 module.exports = {
   formatCurrency,
+  preciseRound,
   validateContact,
   validateAmount,
   validateDate,
@@ -185,12 +189,12 @@ module.exports = {
       const expenses = totalExpenses.total || 0;
       const penalties = totalPenalties.total || 0;
 
-      return (
+      return preciseRound(
         contributions +
-        repayments +
-        penalties +
-        openingBalance -
-        (disbursements + expenses)
+          repayments +
+          penalties +
+          openingBalance -
+          (disbursements + expenses),
       );
     } catch (err) {
       console.error("Error calculating fund balance:", err);
@@ -199,14 +203,15 @@ module.exports = {
   },
   logAudit: async (req, action, details) => {
     try {
-      const userId = req.session?.user?.id || null;
-      const ip = req.ip || req.connection.remoteAddress;
+      const userId = req?.session?.user?.id || null;
+      const ip = req?.ip || req?.connection?.remoteAddress || "127.0.0.1";
+      const userAgent = req?.headers ? req.headers["user-agent"] : null;
       const detailsStr =
         typeof details === "string" ? details : JSON.stringify(details);
 
       await db.run(
-        "INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, ?, ?, ?)",
-        [userId, action, detailsStr, ip],
+        "INSERT INTO audit_logs (user_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)",
+        [userId, action, detailsStr, ip, userAgent],
       );
     } catch (err) {
       console.error("Audit Log Error:", err);
